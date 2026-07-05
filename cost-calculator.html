@@ -149,7 +149,10 @@
      и если верхняя часть viewport'а после window.scrollTo(0,0) оказывалась почти пустой,
      получался пустой/почти пустой PDF. Теперь высота блока естественная (auto), растёт под
      содержимое целиком, а не зажата рамками экрана. */
-  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; color:#2B1B12; z-index:9999; padding:24px; box-sizing:border-box; }
+  /* ИСПРАВЛЕНО: width:100% на телефоне = ширина ЭКРАНА (~380px), а не ширина печатного
+     документа — таблица с несколькими колонками не влезает, цифры переносятся на вторую
+     строку внутри ячейки. Фиксированная ширина 760px не зависит от экрана устройства. */
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:760px; background:#fff; color:#2B1B12; z-index:9999; padding:24px; box-sizing:border-box; }
   .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C99A3D;text-align:center;margin-bottom:10px;}
   .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
   .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#241609;}
