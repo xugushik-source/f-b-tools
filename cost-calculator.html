@@ -178,7 +178,7 @@ async function storeGet(key, shared){
 function buildReportUrl(payload){
   const base = window.location.origin + window.location.pathname;
   const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
-  return base + '?report=' + compressed;
+  return base + '?report=' + encodeURIComponent(compressed);
 }
 function readReportFromUrl(){
   const params = new URLSearchParams(window.location.search);
