@@ -149,7 +149,7 @@
      и если верхняя часть viewport'а после window.scrollTo(0,0) оказывалась почти пустой,
      получался пустой/почти пустой PDF. Теперь высота блока естественная (auto), растёт под
      содержимое целиком, а не зажата рамками экрана. */
-  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; z-index:9999; padding:24px; box-sizing:border-box; }
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; color:#2B1B12; z-index:9999; padding:24px; box-sizing:border-box; }
   .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C99A3D;text-align:center;margin-bottom:10px;}
   .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
   .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#241609;}
@@ -160,9 +160,9 @@
   .pr-big{text-align:center;background:#FBF6EC;border:2px solid #C99A3D;border-radius:6px;padding:16px;margin-bottom:20px;}
   .pr-big .val{font-family:'Oswald',sans-serif;font-size:30px;color:#241609;font-weight:700;}
   .pr-big .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;text-transform:uppercase;}
-  table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;}
-  table.pr-table th{text-align:left;border-bottom:2px solid #241609;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;}
-  table.pr-table td{padding:6px 8px;border-bottom:1px solid #DCCFAE;}
+  table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;color:#2B1B12;}
+  table.pr-table th{text-align:left;border-bottom:2px solid #241609;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;color:#241609;}
+  table.pr-table td{padding:6px 8px;border-bottom:1px solid #DCCFAE;color:#2B1B12;}
   table.pr-table tr:nth-child(even){background:#FBF6EC;}
   .pr-footer{margin-top:30px;font-size:10px;color:#6B5A48;text-align:center;font-family:'JetBrains Mono',monospace;border-top:1px solid #DCCFAE;padding-top:12px;}
   .pr-footer b{color:#241609;}
