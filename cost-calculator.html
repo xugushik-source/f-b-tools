@@ -137,7 +137,13 @@
      режиме печати — внутри @media print эти стили были бы не видны html2canvas,
      и PDF получился бы пустым/неоформленным. @media print ниже отвечает только
      за запасной путь через системный диалог печати (window.print()). */
-  .printable-report{ position:absolute; left:-99999px; top:0; width:800px; background:#fff; padding:24px; box-sizing:border-box; }
+  /* ИСПРАВЛЕНО: раньше блок уводился на left:-99999px, чтобы не мешать интерфейсу, но при
+     этом существовать для html2canvas. Это задокументированный баг html2canvas именно на iOS
+     (github.com/niklasvh/html2canvas issue #2149 "ios: blank canvas", #117) — элемент далеко
+     за пределами видимой страницы захватывается пустым. Теперь блок просто скрыт через
+     display:none и временно показывается на весь экран ТОЛЬКО на момент самого снимка
+     (см. downloadReportPdf), после чего сразу скрывается обратно. */
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; overflow:auto; background:#fff; z-index:9999; padding:24px; box-sizing:border-box; }
   .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C99A3D;text-align:center;margin-bottom:10px;}
   .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
   .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#241609;}
@@ -1045,11 +1051,22 @@ async function downloadReportPdf(triggerEl){
   try{
     if(typeof html2pdf === 'undefined') throw new Error('html2pdf.js не загрузился (проверьте сеть/CDN)');
     const idPart = (lastReportData && lastReportData.id) ? lastReportData.id : 'raschet';
+
+    // ВАЖНО: показываем блок на весь экран непосредственно перед захватом. html2canvas на iOS
+    // не захватывает элементы, вынесенные далеко за пределы видимой страницы (задокументированный
+    // баг библиотеки, не только наше предположение) — поэтому блок должен реально быть в
+    // отрисованной области экрана в момент снимка, а не спрятан координатами за пределы экрана.
+    el.style.display = 'block';
+    window.scrollTo(0, 0);
+    // Даём браузеру один кадр на реальную отрисовку перед тем, как html2canvas начнёт снимать —
+    // без этой паузы есть риск поймать ещё не отрисованный кадр.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
     await html2pdf().from(el).set({
       margin: 8,
       filename: 'otchet-' + idPart + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).save();
   }catch(e){
@@ -1057,6 +1074,7 @@ async function downloadReportPdf(triggerEl){
     alert('Не удалось сформировать PDF-файл напрямую — открываю системный диалог печати. В нём выберите «Сохранить как PDF».');
     window.print();
   }finally{
+    el.style.display = 'none'; // обязательно скрываем обратно, даже если что-то упало
     if(triggerEl){ triggerEl.textContent = originalLabel; triggerEl.disabled = false; }
   }
 }
