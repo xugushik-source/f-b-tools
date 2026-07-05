@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Себестоимость и точка безубыточности — общепит</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --espresso:#241609;
+    --espresso-2:#3a2413;
+    --paper:#FBF6EC;
+    --paper-2:#F2EAD8;
+    --gold:#C99A3D;
+    --gold-2:#E8B84B;
+    --ink:#2B1B12;
+    --ink-soft:#6B5A48;
+    --green:#3E7C59;
+    --red:#B6462F;
+    --line:#DCCFAE;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--espresso);
+    background-image: radial-gradient(circle at 15% 10%, #3a2413 0%, #241609 55%);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--gold);color:var(--espresso);}
+
+  .app{max-width:1180px;margin:0 auto;padding:28px 18px 80px;}
+
+  /* HEADER */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid rgba(232,184,75,.25);padding-bottom:18px;}
+  .brand-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-2);margin:0 0 6px;}
+  h1.brand{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:.01em;margin:0;color:var(--paper);text-transform:uppercase;}
+  .brand small{display:block;font-family:'Inter',sans-serif;font-weight:400;text-transform:none;font-size:14px;color:var(--ink-soft);color:#C9BBA0;margin-top:6px;letter-spacing:0;}
+  .mode-switch{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .mode-switch button{background:transparent;border:1px solid rgba(232,184,75,.4);color:#C9BBA0;padding:8px 12px;border-radius:3px;cursor:pointer;letter-spacing:.05em;}
+  .mode-switch button.active{background:var(--gold);border-color:var(--gold);color:var(--espresso);font-weight:700;}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;margin-bottom:22px;flex-wrap:wrap;}
+  .tab{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;letter-spacing:.04em;padding:12px 18px;background:rgba(255,255,255,.03);border:1px solid rgba(232,184,75,.18);border-bottom:none;color:#C9BBA0;cursor:pointer;}
+  .tab.active{background:var(--paper);color:var(--espresso);font-weight:700;border-color:var(--paper);}
+
+  /* LAYOUT */
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--paper);color:var(--ink);border-radius:2px;padding:26px;}
+  .panel h2{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:20px;letter-spacing:.03em;margin:0 0 4px;color:var(--espresso);}
+  .panel .sub{font-size:13px;color:var(--ink-soft);margin:0 0 20px;}
+
+  section.hidden{display:none;}
+
+  /* FORM ELEMENTS */
+  label.field-label{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:5px;}
+  input[type=text],input[type=number],input[type=tel],select{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);
+  }
+  input[type=text]{font-family:'Inter',sans-serif;}
+  input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .row{display:grid;gap:10px;margin-bottom:12px;}
+  .row.r2{grid-template-columns:1fr 1fr;}
+  .row.r3{grid-template-columns:2fr 1fr 1fr;}
+  .row.r5{grid-template-columns:2fr 1fr 1fr 1fr auto;}
+  @media (max-width:640px){.row.r5,.row.r3{grid-template-columns:1fr;}}
+
+  .btn{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:13px;font-weight:600;padding:11px 18px;border-radius:2px;border:none;cursor:pointer;}
+  .btn-primary{background:var(--espresso);color:var(--gold-2);}
+  .btn-primary:hover{background:var(--ink);}
+  .btn-ghost{background:transparent;border:1px solid var(--ink-soft);color:var(--ink-soft);}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);}
+  .btn-gold{background:var(--gold);color:var(--espresso);}
+  .btn-sm{padding:7px 10px;font-size:11px;}
+
+  .dish-card{border:1px solid var(--line);border-radius:2px;padding:16px 16px 12px;margin-bottom:14px;background:#fff;}
+  .dish-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+  .dish-card-head input[type=text]{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;border:none;border-bottom:1px dashed var(--line);border-radius:0;padding:4px 0;flex:1;min-width:0;}
+  .dish-card-head{flex-wrap:wrap;}
+  .ing-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;}
+  @media (max-width:640px){.ing-row{grid-template-columns:1fr 1fr;}}
+  .ing-row .unit-sel{font-size:12px;padding:8px 6px;}
+  .ing-row.modifier{background:#FCF6E6;}
+  .tiny{font-size:11px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .modifier-tag{font-size:10px;background:var(--gold);color:var(--espresso);padding:2px 6px;border-radius:2px;text-transform:uppercase;font-weight:700;letter-spacing:.04em;}
+  .dish-stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .dish-stats b{display:block;font-size:16px;color:var(--espresso);}
+  .fc-good{color:var(--green);}
+  .fc-bad{color:var(--red);}
+
+  .exp-group{margin-bottom:22px;}
+  .exp-group h3{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;letter-spacing:.05em;color:var(--ink-soft);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .exp-row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin-bottom:8px;}
+  .exp-row span{font-size:13px;}
+
+  /* RECEIPT TAPE */
+  .receipt{background:var(--paper);color:var(--ink);border-radius:2px;padding:22px 20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;position:sticky;top:20px;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(0,0,0,.025) 28px);
+  }
+  .receipt-title{text-align:center;font-family:'Oswald',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
+  .receipt-sub{text-align:center;font-size:10px;color:var(--ink-soft);margin-bottom:14px;}
+  .receipt hr{border:none;border-top:1px dashed var(--ink-soft);margin:10px 0;}
+  .receipt-line{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
+  .receipt-line.total{font-weight:700;font-size:14px;margin-top:6px;}
+  .receipt-line .l{color:var(--ink-soft);}
+  .receipt-zig{height:8px;background:
+    linear-gradient(-45deg, var(--espresso) 5px, transparent 0),
+    linear-gradient(45deg, var(--espresso) 5px, transparent 0);
+    background-repeat:repeat-x;background-size:12px 12px;background-position:left bottom;margin-top:-22px;}
+
+  .result-big{text-align:center;padding:26px 10px;}
+  .result-big .num{font-family:'Oswald',sans-serif;font-size:44px;color:var(--espresso);font-weight:700;line-height:1;}
+  .result-big .cap{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px;}
+
+  .send-box{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .send-box a.btn{text-decoration:none;display:inline-block;}
+
+  .badge-id{display:inline-block;font-family:'JetBrains Mono',monospace;background:var(--espresso);color:var(--gold-2);padding:6px 12px;border-radius:2px;font-size:13px;letter-spacing:.05em;margin-top:10px;}
+
+  footer.app-footer{text-align:center;margin-top:40px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a7a63;}
+  footer.app-footer button{background:none;border:none;color:#8a7a63;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:11px;}
+
+  .lookup-result{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
+  .warn-box{background:#FCF1E9;border:1px solid #E8B84B;color:#6B4A17;padding:12px 14px;border-radius:2px;font-size:12.5px;margin-bottom:16px;}
+  .empty-note{font-size:13px;color:var(--ink-soft);font-style:italic;padding:10px 0;}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ================= STORAGE HELPERS (с откатом на localStorage) ================= */
+function hasClaudeStorage(){ return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.set === 'function'; }
+async function storeSet(key, value, shared){
+  if(hasClaudeStorage()){
+    try{ const r = await window.storage.set(key, value, !!shared); if(r) return r; }catch(e){ console.warn('Хранилище Claude недоступно, использую localStorage'); }
+  }
+  if(shared) return null; // localStorage не может быть общим между устройствами — для shared просто нет замены
+  try{ localStorage.setItem('calc-app:'+key, value); return {key,value,shared:false}; }catch(e){ console.warn(e); return null; }
+}
+async function storeGet(key, shared){
+  if(hasClaudeStorage()){
+    try{ const r = await window.storage.get(key, !!shared); if(r) return r; }catch(e){ console.warn('Хранилище Claude недоступно, использую localStorage'); }
+  }
+  if(shared) return null;
+  try{ const v = localStorage.getItem('calc-app:'+key); return v!==null ? {key,value:v,shared:false} : null; }catch(e){ return null; }
+}
+
+/* ================= URL DATA ENCODING (без хранилища — работает на любом хостинге) ================= */
+function b64Encode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64Decode(str){ return decodeURIComponent(escape(atob(str))); }
+function buildReportUrl(payload){
+  const base = window.location.origin + window.location.pathname;
+  return base + '?report=' + encodeURIComponent(b64Encode(JSON.stringify(payload)));
+}
+function readReportFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('report');
+  if(!raw) return null;
+  try{ return JSON.parse(b64Decode(raw)); }catch(e){ console.error('Не удалось прочитать отчёт из ссылки:', e); return null; }
+}
+
+/* ================= NUMBER HELPERS ================= */
+function toNum(v){
+  if(v===null||v===undefined) return 0;
+  const s = String(v).trim().replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+/* ================= STATE ================= */
+const UNITS = ["г","кг","мл","л","шт"];
+let state = {
+  view: "client",        // client | admin
+  tab: "dishes",          // dishes | expenses | result | admin-lookup | admin-settings
+  currency: "₾",
+  settings: { whatsapp: "995579145634", reviewWhatsapp: "995591244075", telegram: "", pin: "2003" },
+  dishes: [],
+  fixed: [
+    ["Аренда помещения",0],["Оклады персонала",0],["Налоги на зарплату",0],["Коммунальные услуги",0],
+    ["Интернет и связь",0],["Клининг / вывоз мусора",0],["Охрана / пожарная сигнализация",0],
+    ["Бухгалтерия / юр. сопровождение",0],["Лицензии и разрешения",0],["Лизинг оборудования",0],
+    ["ПО (касса, CRM, учёт)",0],["Маркетинг (фикс. бюджет)",0],["Страхование",0],["Ремонт и обслуживание",0],
+    ["Прочие постоянные",0]
+  ],
+  variablePct: { acquiring: 2.5, delivery: 0, staffBonus: 0 },
+  avgCheck: 0,
+  lastSubmitId: null,
+  clientContact: "",
+  manualSendUrl: null,
+  savedList: [],           // [{id, name, updatedAt}]
+  currentSavedId: null,
+  currentSavedName: null
+};
+
+function newDish(name){
+  return { id: crypto.randomUUID().slice(0,6), name: name||"Новое блюдо", sellPrice:0, packaging:0,
+    ingredients: [ {name:"", unit:"г", pkgPrice:0, pkgQty:0, usedQty:0, modifier:false} ] };
+}
+
+function dishIngCost(ing){
+  const p = toNum(ing.pkgPrice), pq = toNum(ing.pkgQty), uq = toNum(ing.usedQty);
+  if(pq<=0) return 0;
+  return (p/pq)*uq;
+}
+function dishBaseCost(d){
+  return d.ingredients.filter(i=>!i.modifier).reduce((s,i)=>s+dishIngCost(i),0) + toNum(d.packaging);
+}
+function dishModifiersCost(d){
+  return d.ingredients.filter(i=>i.modifier).reduce((s,i)=>s+dishIngCost(i),0);
+}
+function foodCostPct(d){
+  const price = toNum(d.sellPrice);
+  if(price<=0) return 0;
+  return (dishBaseCost(d)/price)*100;
+}
+
+/* ================= CALC: BREAKEVEN ================= */
+function computeBreakeven(){
+  const totalFixed = state.fixed.reduce((s,[,v])=>s+toNum(v),0);
+  const dishesWithPrice = state.dishes.filter(d=>toNum(d.sellPrice)>0);
+  let avgFoodCostPct = 0;
+  if(dishesWithPrice.length){
+    avgFoodCostPct = dishesWithPrice.reduce((s,d)=>s+foodCostPct(d),0)/dishesWithPrice.length;
+  }
+  let avgCheck = toNum(state.avgCheck);
+  if(avgCheck<=0 && dishesWithPrice.length){
+    avgCheck = dishesWithPrice.reduce((s,d)=>s+toNum(d.sellPrice),0)/dishesWithPrice.length;
+  }
+  const varPct = toNum(state.variablePct.acquiring) + toNum(state.variablePct.delivery) + toNum(state.variablePct.staffBonus);
+  const variableShare = (avgFoodCostPct/100) + (varPct/100);
+  const marginShare = 1 - variableShare;
+  let revenue = null, checksMonth = null, checksDay = null;
+  if(marginShare > 0.001 && totalFixed>0){
+    revenue = totalFixed / marginShare;
+    if(avgCheck>0){ checksMonth = revenue/avgCheck; checksDay = checksMonth/30; }
+  }
+  return { totalFixed, avgFoodCostPct, avgCheck, varPct, marginShare, revenue, checksMonth, checksDay };
+}
+
+/* ================= RENDER ================= */
+const app = document.getElementById("app");
+
+function fmt(n, dec){
+  if(n===null||n===undefined||isNaN(n)) return "—";
+  const d = dec===undefined ? 2 : dec;
+  const fixed = Number(n).toFixed(d);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return parts.length>1 ? parts[0]+'.'+parts[1] : parts[0];
+}
+
+function render(){
+  const activeEl = document.activeElement;
+  const activeId = (activeEl && activeEl.id) ? activeEl.id : null;
+  const selStart = (activeEl && 'selectionStart' in activeEl) ? activeEl.selectionStart : null;
+  const selEnd = (activeEl && 'selectionEnd' in activeEl) ? activeEl.selectionEnd : null;
+
+  const bk = computeBreakeven();
+  app.innerHTML = `
+    <header class="top">
+      <div>
+        <p class="brand-eyebrow">Общепит · Себестоимость · Точка безубыточности</p>
+        <h1 class="brand">Калькулятор&nbsp;чек-баланс<small>Кофейни, рестораны и фастфуд — от блюда до точки безубыточности</small></h1>
+      </div>
+      <div class="mode-switch">
+        <button data-act="setview" data-view="client" class="${state.view==='client'?'active':''}">Режим клиента</button>
+        <button data-act="setview" data-view="admin" class="${state.view==='admin'?'active':''}">Админ</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab ${state.tab==='dishes'?'active':''}" data-act="tab" data-tab="dishes">1 · Блюда</div>
+      <div class="tab ${state.tab==='expenses'?'active':''}" data-act="tab" data-tab="expenses">2 · Расходы</div>
+      <div class="tab ${state.tab==='result'?'active':''}" data-act="tab" data-tab="result">3 · Итог</div>
+      <div class="tab ${state.tab==='saved'?'active':''}" data-act="tab" data-tab="saved">Мои расчёты</div>
+      ${state.view==='admin' ? `<div class="tab ${state.tab==='lookup'?'active':''}" data-act="tab" data-tab="lookup">Заявки клиентов</div>
+      <div class="tab ${state.tab==='adminset'?'active':''}" data-act="tab" data-tab="adminset">Настройки</div>` : ``}
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        ${state.tab==='dishes' ? renderDishesTab() : ''}
+        ${state.tab==='expenses' ? renderExpensesTab() : ''}
+        ${state.tab==='result' ? renderResultTab(bk) : ''}
+        ${state.tab==='saved' ? renderSavedTab() : ''}
+        ${state.tab==='lookup' ? renderLookupTab() : ''}
+        ${state.tab==='adminset' ? renderAdminSettingsTab() : ''}
+      </div>
+      <div>${state.view==='admin' ? renderReceipt(bk) : renderClientReceipt(bk)}</div>
+    </div>
+
+    <footer class="app-footer">
+      Все расчёты выполняются локально в этом инструменте. · <button data-act="setview" data-view="${state.view==='admin'?'client':'admin'}">${state.view==='admin' ? 'Выйти из режима администратора' : 'Я администратор'}</button>
+    </footer>
+  `;
+  attachHandlers();
+
+  if(activeId){
+    const el2 = document.getElementById(activeId);
+    if(el2){
+      el2.focus();
+      if(selStart!=null && el2.setSelectionRange){
+        try{ el2.setSelectionRange(selStart, selEnd); }catch(e){}
+      }
+    }
+  }
+}
+
+function renderDishesTab(){
+  return `
+    <h2>Меню: блюдо → ингредиенты → себестоимость</h2>
+    <p class="sub">Впишите ингредиенты так, как покупаете их сами: цена и вес/объём упаковки. Расход на блюдо — сколько ушло в конкретную порцию. Сироп, доп. молоко и другие добавки отмечайте как модификатор — они не войдут в себестоимость базового блюда.</p>
+    ${state.dishes.length===0 ? '<p class="empty-note">Пока ни одного блюда. Добавьте первое — например, «Латте».</p>' : ''}
+    ${state.dishes.map(d=>renderDishCard(d)).join('')}
+    <button class="btn btn-primary" data-act="add-dish">+ Добавить блюдо</button>
+  `;
+}
+
+function renderDishCard(d){
+  const base = dishBaseCost(d), mod = dishModifiersCost(d), fc = foodCostPct(d);
+  const fcClass = fc===0 ? '' : (fc<=32 ? 'fc-good' : 'fc-bad');
+  return `
+  <div class="dish-card" data-dish="${d.id}">
+    <div class="dish-card-head">
+      <input type="text" id="dishname-${d.id}" value="${escapeHtml(d.name)}" data-act="dish-name" data-dish="${d.id}" placeholder="Название блюда">
+      <button class="btn btn-ghost btn-sm" data-act="dup-dish" data-dish="${d.id}">Дублировать блюдо</button>
+      <button class="btn btn-danger btn-sm" data-act="del-dish" data-dish="${d.id}">Удалить</button>
+    </div>
+    ${d.ingredients.map((ing,idx)=>renderIngRow(d.id, ing, idx)).join('')}
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn btn-ghost btn-sm" data-act="add-ing" data-dish="${d.id}">+ Ингредиент</button>
+      <button class="btn btn-ghost btn-sm" data-act="add-mod" data-dish="${d.id}">+ Модификатор (сироп, добавка)</button>
+    </div>
+    <p class="tiny" style="margin-top:6px;">⚠ «Вес упак.» и «Расход» — указывайте в одной и той же единице (лучше в граммах/мл, не в кг/л). Конвертации между ними тулза не делает.</p>
+    <div class="row r2" style="margin-top:12px;">
+      <div>
+        <label class="field-label">Тара / упаковка на 1 порцию, ${state.currency}</label>
+        <input type="text" inputmode="decimal" id="dishpack-${d.id}" value="${d.packaging}" data-act="dish-packaging" data-dish="${d.id}">
+      </div>
+      <div>
+        <label class="field-label">Цена продажи, ${state.currency}</label>
+        <input type="text" inputmode="decimal" id="dishprice-${d.id}" value="${d.sellPrice}" data-act="dish-price" data-dish="${d.id}">
+      </div>
+    </div>
+    <div class="dish-stats" style="${state.view==='admin'?'':'display:none;'}">
+      <div><span class="tiny">Себестоимость</span><b>${fmt(base)} ${state.currency}</b></div>
+      ${mod>0?`<div><span class="tiny">+ модификаторы</span><b>${fmt(mod)} ${state.currency}</b></div>`:''}
+      <div><span class="tiny">Food cost</span><b class="${fcClass}">${fc?fmt(fc,1)+'%':'—'}</b></div>
+      <div><span class="tiny">Маржа с блюда</span><b>${d.sellPrice? fmt((parseFloat(d.sellPrice)||0)-base,2)+' '+state.currency : '—'}</b></div>
+    </div>
+    ${state.view!=='admin' ? `<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);">Данные сохранены. Расчёт себестоимости и точку безубыточности вы увидите на шаге «Итог».</p>` : ''}
+  </div>`;
+}
+
+function renderIngRow(dishId, ing, idx){
+  const uid = dishId+'-'+idx;
+  return `
+  <div class="ing-row ${ing.modifier?'modifier':''}" data-dish="${dishId}" data-idx="${idx}">
+    <input type="text" id="ing-name-${uid}" placeholder="Ингредиент (кофе зерно, молоко...)" value="${escapeHtml(ing.name)}" data-act="ing-name">
+    <input type="text" inputmode="decimal" id="ing-pkgprice-${uid}" placeholder="Цена упак." value="${ing.pkgPrice}" data-act="ing-pkgprice" title="Цена упаковки, ${state.currency}">
+    <input type="text" inputmode="decimal" id="ing-pkgqty-${uid}" placeholder="Вес упак." value="${ing.pkgQty}" data-act="ing-pkgqty" title="Вес/объём упаковки">
+    <select id="ing-unit-${uid}" data-act="ing-unit">${UNITS.map(u=>`<option ${u===ing.unit?'selected':''}>${u}</option>`).join('')}</select>
+    <input type="text" inputmode="decimal" id="ing-usedqty-${uid}" placeholder="Расход" value="${ing.usedQty}" data-act="ing-usedqty" title="Сколько ушло на порцию">
+    <button class="btn btn-danger btn-sm" data-act="del-ing">✕</button>
+  </div>`;
+}
+
+function renderExpensesTab(){
+  return `
+    <h2>Расходы бизнеса</h2>
+    <p class="sub">Постоянные — платите каждый месяц независимо от продаж. Переменные — растут вместе с оборотом, задаются в процентах от выручки.</p>
+    <div class="exp-group">
+      <h3>Постоянные расходы, ${state.currency} / мес</h3>
+      ${state.fixed.map((f,i)=>`
+        <div class="exp-row">
+          <span>${f[0]}</span>
+          <input type="text" inputmode="decimal" id="fixedval-${i}" value="${f[1]}" data-act="fixed-val" data-idx="${i}">
+        </div>`).join('')}
+      <button class="btn btn-ghost btn-sm" data-act="add-fixed" style="margin-top:6px;">+ Своя статья расхода</button>
+    </div>
+    <div class="exp-group">
+      <h3>Переменные расходы, % от выручки</h3>
+      <div class="exp-row"><span>Эквайринг / комиссия платежей</span><input type="text" inputmode="decimal" id="var-acquiring" value="${state.variablePct.acquiring}" data-act="var-acquiring"></div>
+      <div class="exp-row"><span>Комиссия агрегаторов доставки</span><input type="text" inputmode="decimal" id="var-delivery" value="${state.variablePct.delivery}" data-act="var-delivery"></div>
+      <div class="exp-row"><span>Бонусы персонала от продаж</span><input type="text" inputmode="decimal" id="var-staffbonus" value="${state.variablePct.staffBonus}" data-act="var-staffbonus"></div>
+    </div>
+    <div class="exp-group">
+      <h3>Средний чек</h3>
+      <label class="field-label">Задать вручную (иначе считаем как среднее по меню), ${state.currency}</label>
+      <input type="text" inputmode="decimal" id="avgcheck" value="${state.avgCheck}" data-act="avg-check" style="max-width:220px;">
+    </div>
+  `;
+}
+
+function renderResultTab(bk){
+  const revenueOk = bk.revenue!==null;
+  return `
+    <h2>Точка безубыточности</h2>
+    <p class="sub">Сколько нужно продавать в месяц, чтобы выйти в ноль — до этой цифры бизнес работает в минус, после — в плюс.</p>
+    ${!revenueOk ? `<div class="warn-box">Не хватает данных: заполните хотя бы одно постоянное расходы и цены продажи блюд (вкладки «Блюда» и «Расходы»).</div>` : ''}
+
+    ${state.view==='admin' ? `
+    <div class="row r2">
+      <div><span class="tiny">Постоянные расходы / мес</span><br><b>${fmt(bk.totalFixed,0)} ${state.currency}</b></div>
+      <div><span class="tiny">Средний food cost</span><br><b>${fmt(bk.avgFoodCostPct,1)}%</b></div>
+      <div><span class="tiny">Прочие переменные</span><br><b>${fmt(bk.varPct,1)}%</b></div>
+      <div><span class="tiny">Средний чек</span><br><b>${fmt(bk.avgCheck,1)} ${state.currency}</b></div>
+    </div>
+    ${revenueOk ? `
+    <div class="result-big">
+      <div class="num">${fmt(bk.revenue,0)} ${state.currency}</div>
+      <div class="cap">Выручка безубыточности / месяц</div>
+    </div>
+    <div class="row r2">
+      <div style="text-align:center;"><div class="num" style="font-size:26px;">${fmt(bk.checksMonth,0)}</div><div class="cap">чеков / месяц</div></div>
+      <div style="text-align:center;"><div class="num" style="font-size:26px;">${fmt(bk.checksDay,1)}</div><div class="cap">чеков / день</div></div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-gold" data-act="admin-send-report">Отправить результат на внутренний WhatsApp</button>
+    </div>
+    ` : ''}
+    ` : `
+    <div class="empty-note" style="text-align:center;padding:30px 10px;">Расчёт проведён. Результат вы не увидите на этом экране — он будет обработан отдельно.</div>
+    `}
+
+    ${state.view==='client' ? `
+    <hr style="margin:24px 0;border:none;border-top:1px solid var(--line);">
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Отправить данные на обработку</h3>
+    <p class="sub" style="margin-bottom:14px;">Мы получим ваши данные и пришлём готовый расчёт себестоимости и точки безубыточности в переписке.</p>
+    <div class="send-box">
+      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">Расчёт себестоимости и точки безубыточности</a>
+      ${state.settings.telegram ? `<a class="btn btn-gold" data-act="send" data-channel="telegram" href="#">Отправить в Telegram</a>` : ''}
+    </div>
+    <div style="max-width:340px;margin:14px auto 0;">
+      <label class="field-label">Ваш номер для ответа (необязательно)</label>
+      <input type="text" id="client-contact" placeholder="Напр. 995xxxxxxxxx" value="${state.clientContact||''}">
+    </div>
+    ${state.lastSubmitId ? `<div style="text-align:center;"><span class="badge-id">ID расчёта: ${state.lastSubmitId}</span></div>` : ''}
+    ${state.manualSendUrl ? `<div style="text-align:center;margin-top:10px;"><a href="${state.manualSendUrl}" target="_blank" class="btn btn-primary btn-sm">Нажмите здесь, чтобы открыть WhatsApp вручную</a></div>` : ''}
+    ` : ''}
+  `;
+}
+
+function renderLookupTab(){
+  return `
+    <h2>Заявки клиентов</h2>
+    <p class="sub">Откройте ссылку из сообщения клиента напрямую в браузере — отчёт откроется автоматически (спросит PIN). Если ссылка пришла текстом и не открывается сама — вставьте её сюда целиком.</p>
+    <div class="row" style="max-width:640px;">
+      <input type="text" id="lookup-url" placeholder="Вставьте ссылку из сообщения клиента (https://...?report=...)">
+      <button class="btn btn-primary" data-act="do-lookup" style="max-width:220px;">Открыть отчёт</button>
+    </div>
+    <div id="lookup-out"></div>
+  `;
+}
+
+function renderAdminSettingsTab(){
+  return `
+    <h2>Настройки администратора</h2>
+    <div class="row r2">
+      <div><label class="field-label">WhatsApp клиента (сюда приходят сырые данные)</label><input type="text" id="set-wa" value="${state.settings.whatsapp}"></div>
+      <div><label class="field-label">WhatsApp для анализа (сюда — готовый отчёт по ID)</label><input type="text" id="set-wa-review" value="${state.settings.reviewWhatsapp}"></div>
+    </div>
+    <div class="row r2">
+      <div><label class="field-label">Telegram-юзернейм (без @, необязательно)</label><input type="text" id="set-tg" value="${state.settings.telegram}"></div>
+      <div><label class="field-label">Валюта, символ</label><input type="text" id="set-cur" value="${state.currency}"></div>
+    </div>
+    <div class="row r2">
+      <div><label class="field-label">PIN админ-режима</label><input type="text" id="set-pin" value="${state.settings.pin}"></div>
+    </div>
+    <button class="btn btn-primary" data-act="save-settings">Сохранить настройки</button>
+    <p class="tiny" style="margin-top:10px;">PIN — защита от случайного захода клиента в админ-режим, а не от целенаправленного взлома. Ссылку с этим инструментом отправляйте клиентам как есть — они попадут сразу в режим клиента.</p>
+  `;
+}
+
+function renderSavedTab(){
+  return `
+    <h2>Мои расчёты</h2>
+    <p class="sub">Сохраните форму, чтобы не вводить меню заново в следующий раз. Каждая сохранённая форма — отдельная копия, её можно открыть, отредактировать или продублировать под вариант (например, 10 видов латте).</p>
+    ${state.currentSavedId ? `
+      <div class="warn-box" style="background:#EAF3EC;border-color:#3E7C59;color:#1f4a30;">
+        Сейчас открыт расчёт «<b>${escapeHtml(state.currentSavedName||'')}</b>». Изменения не сохраняются автоматически — не забудьте нажать «Обновить».
+        <div style="margin-top:10px;"><button class="btn btn-primary btn-sm" data-act="update-current">Обновить «${escapeHtml(state.currentSavedName||'')}»</button></div>
+      </div>
+    ` : ''}
+    <div class="row r2" style="max-width:480px;">
+      <input type="text" id="new-save-name" placeholder="Название формы, напр. «Латте база»">
+      <button class="btn btn-primary" data-act="save-new">Сохранить как новую</button>
+    </div>
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:22px;border-bottom:1px solid var(--line);padding-bottom:6px;">Сохранённые формы</h3>
+    ${state.savedList.length===0 ? '<p class="empty-note">Пока ничего не сохранено.</p>' : ''}
+    ${state.savedList.map(s=>`
+      <div class="exp-row" style="grid-template-columns:1fr auto auto auto;align-items:center;">
+        <span>${escapeHtml(s.name)} <span class="tiny">· ${new Date(s.updatedAt).toLocaleDateString('ru-RU')}</span></span>
+        <button class="btn btn-ghost btn-sm" data-act="open-saved" data-id="${s.id}">Открыть</button>
+        <button class="btn btn-ghost btn-sm" data-act="dup-saved" data-id="${s.id}">Дублировать форму</button>
+        <button class="btn btn-danger btn-sm" data-act="del-saved" data-id="${s.id}">Удалить</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderClientReceipt(bk){
+  return `
+    <div class="receipt">
+      <div class="receipt-title">Чек расчёта</div>
+      <div class="receipt-sub">${new Date().toLocaleDateString('ru-RU')}</div>
+      <hr>
+      <p class="tiny" style="text-align:center;padding:20px 0;">Здесь будет виден только состав ваших данных — расчёт себестоимости и точки безубыточности вы получите отдельно после отправки.</p>
+    </div>
+    <div class="receipt-zig"></div>
+  `;
+}
+
+function renderReceipt(bk){
+  const items = [];
+  state.dishes.forEach(d=>{
+    const base = dishBaseCost(d);
+    if(base>0 || d.name) items.push([d.name||'Блюдо без названия', base]);
+  });
+  return `
+    <div class="receipt">
+      <div class="receipt-title">Чек расчёта</div>
+      <div class="receipt-sub">${new Date().toLocaleDateString('ru-RU')} · ${state.view==='admin'?'режим администратора':'режим клиента'}</div>
+      <hr>
+      ${items.length ? items.map(([n,c])=>`<div class="receipt-line"><span class="l">${escapeHtml(n)}</span><span>${fmt(c)} ${state.currency}</span></div>`).join('') : '<div class="receipt-line"><span class="l">Блюда не добавлены</span></div>'}
+      <hr>
+      <div class="receipt-line"><span class="l">Пост. расходы/мес</span><span>${fmt(bk.totalFixed,0)} ${state.currency}</span></div>
+      <div class="receipt-line"><span class="l">Ср. food cost</span><span>${fmt(bk.avgFoodCostPct,1)}%</span></div>
+      <div class="receipt-line"><span class="l">Ср. чек</span><span>${fmt(bk.avgCheck,1)} ${state.currency}</span></div>
+      <hr>
+      <div class="receipt-line total"><span>Точка безуб.</span><span>${bk.revenue?fmt(bk.revenue,0)+' '+state.currency:'—'}</span></div>
+      ${bk.checksDay?`<div class="receipt-line"><span class="l">чеков/день</span><span>${fmt(bk.checksDay,1)}</span></div>`:''}
+    </div>
+    <div class="receipt-zig"></div>
+  `;
+}
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ================= EVENTS ================= */
+function attachHandlers(){
+  app.querySelectorAll('[data-act]').forEach(el=>{
+    const act = el.dataset.act;
+    const evt = (el.tagName==='INPUT'||el.tagName==='SELECT') ? 'input' : 'click';
+    el.addEventListener(evt, (e)=>{
+      if(el.tagName==='A' && el.getAttribute('href')==='#') e.preventDefault();
+      handleAction(act, el, e);
+    });
+  });
+}
+
+function findDish(id){ return state.dishes.find(d=>d.id===id); }
+
+function handleAction(act, el, e){
+  switch(act){
+    case 'setview':
+      if(el.dataset.view==='admin' && state.view!=='admin'){
+        const pin = prompt('Введите PIN администратора:');
+        if(pin !== state.settings.pin){ alert('Неверный PIN'); return; }
+      }
+      state.view = el.dataset.view;
+      if(state.view==='admin' && state.tab==='result') state.tab='dishes';
+      render(); break;
+    case 'tab': state.tab = el.dataset.tab; render(); break;
+
+    case 'add-dish': state.dishes.push(newDish('')); render(); break;
+    case 'dup-dish': {
+      const orig = findDish(el.dataset.dish);
+      const idx = state.dishes.findIndex(d=>d.id===el.dataset.dish);
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = crypto.randomUUID().slice(0,6);
+      copy.name = orig.name + ' (копия)';
+      state.dishes.splice(idx+1, 0, copy);
+      render(); break;
+    }
+    case 'del-dish': state.dishes = state.dishes.filter(d=>d.id!==el.dataset.dish); render(); break;
+    case 'dish-name': findDish(el.dataset.dish).name = el.value; render(); break;
+    case 'dish-price': findDish(el.dataset.dish).sellPrice = el.value; render(); break;
+    case 'dish-packaging': findDish(el.dataset.dish).packaging = el.value; render(); break;
+
+    case 'add-ing': findDish(el.dataset.dish).ingredients.push({name:"",unit:"г",pkgPrice:0,pkgQty:0,usedQty:0,modifier:false}); render(); break;
+    case 'add-mod': findDish(el.dataset.dish).ingredients.push({name:"",unit:"г",pkgPrice:0,pkgQty:0,usedQty:0,modifier:true}); render(); break;
+    case 'del-ing': {
+      const row = el.closest('.ing-row');
+      const d = findDish(row.dataset.dish);
+      d.ingredients.splice(parseInt(row.dataset.idx),1);
+      render(); break;
+    }
+    case 'ing-name': case 'ing-pkgprice': case 'ing-pkgqty': case 'ing-unit': case 'ing-usedqty': {
+      const row = el.closest('.ing-row');
+      const d = findDish(row.dataset.dish);
+      const ing = d.ingredients[parseInt(row.dataset.idx)];
+      if(act==='ing-name') ing.name = el.value;
+      if(act==='ing-pkgprice') ing.pkgPrice = el.value;
+      if(act==='ing-pkgqty') ing.pkgQty = el.value;
+      if(act==='ing-unit') ing.unit = el.value;
+      if(act==='ing-usedqty') ing.usedQty = el.value;
+      render(); break;
+    }
+
+    case 'fixed-val': state.fixed[parseInt(el.dataset.idx)][1] = el.value; render(); break;
+    case 'add-fixed': {
+      const name = prompt('Название статьи расхода:');
+      if(name){ state.fixed.push([name,0]); render(); }
+      break;
+    }
+    case 'var-acquiring': state.variablePct.acquiring = el.value; render(); break;
+    case 'var-delivery': state.variablePct.delivery = el.value; render(); break;
+    case 'var-staffbonus': state.variablePct.staffBonus = el.value; render(); break;
+    case 'avg-check': state.avgCheck = el.value; render(); break;
+
+    case 'save-new': {
+      const nameEl = document.getElementById('new-save-name');
+      const name = nameEl ? nameEl.value : '';
+      if(!name || !name.trim()){ alert('Впишите название формы.'); return; }
+      saveAsNew(name).then(()=>storeSet('last-active-id', state.currentSavedId, false));
+      break;
+    }
+    case 'update-current': updateCurrentSave(); break;
+    case 'open-saved': openSaved(el.dataset.id).then(()=>storeSet('last-active-id', el.dataset.id, false)); break;
+    case 'dup-saved': duplicateSaved(el.dataset.id); break;
+    case 'del-saved': deleteSaved(el.dataset.id); break;
+
+    case 'send': sendResult(el.dataset.channel); break;
+    case 'admin-send-report': adminSendReport(); break;
+
+    case 'do-lookup': doLookup(); break;
+    case 'copy-report': {
+      const ta = document.getElementById('report-text');
+      if(!ta) break;
+      ta.focus(); ta.select();
+      let copied = false;
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(ta.value);
+          copied = true;
+        }
+      }catch(e){}
+      if(!copied){
+        try{ document.execCommand('copy'); copied = true; }catch(e){}
+      }
+      el.textContent = copied ? 'Скопировано ✓' : 'Не удалось — выделите текст вручную';
+      setTimeout(()=>{ el.textContent = 'Копировать отчёт'; }, 2000);
+      break;
+    }
+
+    case 'save-settings': {
+      state.settings.whatsapp = document.getElementById('set-wa').value.trim();
+      state.settings.reviewWhatsapp = document.getElementById('set-wa-review').value.trim();
+      state.settings.telegram = document.getElementById('set-tg').value.trim();
+      state.currency = document.getElementById('set-cur').value.trim() || '₾';
+      state.settings.pin = document.getElementById('set-pin').value.trim() || '1234';
+      storeSet('settings', JSON.stringify(state.settings), false);
+      alert('Настройки сохранены на этом устройстве.');
+      render(); break;
+    }
+  }
+}
+
+/* ================= SAVED CALCULATIONS LIBRARY ================= */
+function snapshotCurrent(){
+  return { dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, currency: state.currency };
+}
+async function refreshSavedList(){
+  const res = await storeGet('saved-list', false);
+  state.savedList = (res && res.value) ? JSON.parse(res.value) : [];
+}
+async function persistSavedList(){
+  await storeSet('saved-list', JSON.stringify(state.savedList), false);
+}
+async function saveAsNew(name){
+  if(!name || !name.trim()) return;
+  const id = crypto.randomUUID().slice(0,8);
+  await storeSet('saved-item:'+id, JSON.stringify(snapshotCurrent()), false);
+  state.savedList.unshift({ id, name: name.trim(), updatedAt: new Date().toISOString() });
+  await persistSavedList();
+  state.currentSavedId = id; state.currentSavedName = name.trim();
+  render();
+}
+async function updateCurrentSave(){
+  if(!state.currentSavedId) return;
+  await storeSet('saved-item:'+state.currentSavedId, JSON.stringify(snapshotCurrent()), false);
+  const item = state.savedList.find(s=>s.id===state.currentSavedId);
+  if(item) item.updatedAt = new Date().toISOString();
+  await persistSavedList();
+  render();
+}
+async function openSaved(id){
+  const res = await storeGet('saved-item:'+id, false);
+  if(!res) return;
+  const data = JSON.parse(res.value);
+  state.dishes = data.dishes; state.fixed = data.fixed; state.variablePct = data.variablePct;
+  state.avgCheck = data.avgCheck; state.currency = data.currency || state.currency;
+  const item = state.savedList.find(s=>s.id===id);
+  state.currentSavedId = id; state.currentSavedName = item ? item.name : null;
+  state.tab = 'dishes';
+  render();
+}
+async function duplicateSaved(id){
+  const res = await storeGet('saved-item:'+id, false);
+  if(!res) return;
+  const item = state.savedList.find(s=>s.id===id);
+  const newId = crypto.randomUUID().slice(0,8);
+  await storeSet('saved-item:'+newId, res.value, false);
+  state.savedList.unshift({ id: newId, name: (item?item.name:'Расчёт')+' (копия)', updatedAt: new Date().toISOString() });
+  await persistSavedList();
+  render();
+}
+async function deleteSaved(id){
+  if(!confirm('Удалить этот сохранённый расчёт без возможности восстановить?')) return;
+  await window.storage.delete('saved-item:'+id, false).catch(()=>{});
+  state.savedList = state.savedList.filter(s=>s.id!==id);
+  if(state.currentSavedId===id){ state.currentSavedId=null; state.currentSavedName=null; }
+  await persistSavedList();
+  render();
+}
+
+async function adminSendReport(){
+  const bk = computeBreakeven();
+  if(bk.revenue===null){ alert('Недостаточно данных для расчёта.'); return; }
+  const win = window.open('about:blank', '_blank');
+  const payload = { id: state.currentSavedId || crypto.randomUUID().slice(0,6), date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk };
+  const report = buildReportText(payload);
+  const url = `https://wa.me/${state.settings.reviewWhatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(report)}`;
+  if(win && !win.closed){
+    win.location.href = url;
+  } else {
+    alert('Браузер заблокировал автооткрытие. Нажмите ОК и используйте ссылку ниже.');
+    state.manualSendUrl = url;
+    render();
+  }
+}
+
+/* ================= SUBMIT TO ADMIN ================= */
+async function sendResult(channel){
+  const bk = computeBreakeven();
+  if(bk.revenue===null){ alert('Сначала заполните хотя бы блюда с ценами и постоянные расходы.'); return; }
+
+  // Открываем окно СРАЗУ, синхронно, пока браузер ещё считает это прямым результатом клика.
+  const win = window.open('about:blank', '_blank');
+
+  const contactEl = document.getElementById('client-contact');
+  state.clientContact = contactEl ? contactEl.value.trim() : '';
+  const id = crypto.randomUUID().slice(0,6);
+  const payload = { id, date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk, clientContact: state.clientContact };
+  state.lastSubmitId = id;
+
+  const reportUrl = buildReportUrl(payload);
+
+  const text = `Расчёт себестоимости и точки безубыточности\n`+
+    `ID: ${id}\n`+
+    `Мои данные для расчёта готовы, ссылка на отчёт: ${reportUrl}`;
+
+  const url = channel==='whatsapp'
+    ? `https://wa.me/${state.settings.whatsapp}?text=${encodeURIComponent(text)}`
+    : `https://t.me/${state.settings.telegram}?text=${encodeURIComponent(text)}`;
+
+  if(win && !win.closed){
+    win.location.href = url;
+  } else {
+    alert('Браузер заблокировал автооткрытие. Нажмите ОК и используйте ссылку, которая появится ниже.');
+    state.manualSendUrl = url;
+  }
+  render();
+}
+
+function buildReportText(data){
+  const bk = data.breakeven;
+  let lines = [];
+  lines.push('ОТЧЁТ: СЕБЕСТОИМОСТЬ И ТОЧКА БЕЗУБЫТОЧНОСТИ');
+  lines.push('ID расчёта: ' + data.id);
+  lines.push('');
+  lines.push('— ТОЧКА БЕЗУБЫТОЧНОСТИ —');
+  lines.push('Выручка/мес: ' + fmt(bk.revenue,0) + ' ' + data.currency);
+  lines.push('Чеков/мес: ' + fmt(bk.checksMonth,0) + '  ·  Чеков/день: ' + fmt(bk.checksDay,1));
+  lines.push('Постоянные расходы/мес: ' + fmt(bk.totalFixed,0) + ' ' + data.currency);
+  lines.push('Средний чек: ' + fmt(bk.avgCheck,1) + ' ' + data.currency);
+  lines.push('');
+  lines.push('— СЕБЕСТОИМОСТЬ ПО МЕНЮ —');
+  data.dishes.forEach(d=>{
+    const base = d.ingredients.filter(i=>!i.modifier).reduce((s,i)=>s+dishIngCost(i),0)+toNum(d.packaging);
+    const fc = toNum(d.sellPrice)>0 ? (base/toNum(d.sellPrice)*100) : 0;
+    const margin = toNum(d.sellPrice) - base;
+    lines.push(d.name + ':');
+    lines.push('  себестоимость ' + fmt(base) + ' ' + data.currency + ' · цена ' + fmt(d.sellPrice) + ' ' + data.currency + ' · food cost ' + (fc?fmt(fc,1)+'%':'—') + ' · маржа ' + fmt(margin) + ' ' + data.currency);
+  });
+  lines.push('');
+  lines.push('— ПОСТОЯННЫЕ РАСХОДЫ —');
+  data.fixed.filter(f=>toNum(f[1])>0).forEach(f=>{
+    lines.push('  ' + f[0] + ': ' + fmt(f[1],0) + ' ' + data.currency);
+  });
+  return lines.join('\n');
+}
+
+async function doLookup(){
+  const raw = document.getElementById('lookup-url').value.trim();
+  const out = document.getElementById('lookup-out');
+  if(!raw){ return; }
+  let data = extractReportFromInput(raw);
+  if(!data){ out.innerHTML = '<p class="empty-note">Не удалось прочитать отчёт — проверьте, что ссылка скопирована целиком.</p>'; return; }
+  renderReportInto(out, data);
+}
+function extractReportFromInput(raw){
+  try{
+    // если вставили целую ссылку — вытаскиваем параметр report
+    if(raw.includes('report=')){
+      const qIndex = raw.indexOf('?');
+      const params = new URLSearchParams(qIndex>=0 ? raw.slice(qIndex) : raw);
+      const p = params.get('report');
+      if(p) return JSON.parse(b64Decode(p));
+    }
+    // иначе пробуем как голый base64-код
+    return JSON.parse(b64Decode(raw));
+  }catch(e){ console.error(e); return null; }
+}
+function renderReportInto(out, data){
+  const report = buildReportText(data);
+  out.innerHTML = `
+    <div class="lookup-result">
+      <p class="tiny">Получено: ${new Date(data.date).toLocaleString('ru-RU')}${data.clientContact ? ' · контакт клиента: '+escapeHtml(data.clientContact) : ' · контакт клиента не указан'}</p>
+      <div class="row r2">
+        <div><span class="tiny">Точка безубыточности</span><br><b>${fmt(data.breakeven.revenue,0)} ${data.currency}</b></div>
+        <div><span class="tiny">Чеков/день</span><br><b>${fmt(data.breakeven.checksDay,1)}</b></div>
+      </div>
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:16px;">Блюда</h3>
+      ${data.dishes.map(d=>{
+        const base = d.ingredients.filter(i=>!i.modifier).reduce((s,i)=>s+dishIngCost(i),0)+toNum(d.packaging);
+        const fc = toNum(d.sellPrice)>0 ? (base/toNum(d.sellPrice)*100) : 0;
+        return `<div class="exp-row"><span>${escapeHtml(d.name)} — себест. ${fmt(base)} ${data.currency}, цена ${fmt(d.sellPrice)} ${data.currency}</span><span>${fc?fmt(fc,1)+'%':'—'}</span></div>`;
+      }).join('')}
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:16px;">Постоянные расходы</h3>
+      ${data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<div class="exp-row"><span>${escapeHtml(f[0])}</span><span>${fmt(f[1],0)} ${data.currency}</span></div>`).join('') || '<p class="empty-note">Не заполнены</p>'}
+
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:20px;border-top:1px solid var(--line);padding-top:14px;">Отчёт для отправки клиенту</h3>
+      <textarea id="report-text" readonly style="width:100%;min-height:220px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px;border:1px solid var(--line);border-radius:2px;">${escapeHtml(report)}</textarea>
+      <div class="send-box" style="justify-content:flex-start;margin-top:10px;">
+        <button class="btn btn-primary btn-sm" data-act="copy-report">Копировать отчёт</button>
+        <a class="btn btn-gold btn-sm" href="https://wa.me/${state.settings.reviewWhatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(report)}" target="_blank">Отправить на внутренний WhatsApp</a>
+      </div>
+      <p class="tiny" style="margin-top:10px;">Клиенту отправляйте вручную — скопируйте отчёт и вставьте в чат, откуда пришли его данные, только после оплаты.</p>
+    </div>
+  `;
+}
+
+/* ================= INIT ================= */
+async function init(){
+  try{
+    const s = await storeGet('settings', false);
+    if(s && s.value){ state.settings = {...state.settings, ...JSON.parse(s.value)}; }
+  }catch(e){}
+
+  // Если открыли по ссылке с отчётом — сразу показываем его (после PIN), минуя обычную форму
+  const reportData = readReportFromUrl();
+  if(reportData){
+    const pin = prompt('Эта ссылка открывает детальный отчёт. Введите PIN администратора:');
+    if(pin === state.settings.pin){
+      app.innerHTML = `
+        <header class="top"><div><p class="brand-eyebrow">Отчёт по ссылке</p><h1 class="brand">Детальный отчёт<small>ID расчёта: ${escapeHtml(reportData.id||'')}</small></h1></div></header>
+        <div class="layout"><div class="panel" id="direct-report"></div><div></div></div>
+      `;
+      renderReportInto(document.getElementById('direct-report'), reportData);
+    } else {
+      app.innerHTML = `<div class="panel" style="margin-top:40px;"><h2>Неверный PIN</h2><p class="sub">Обновите страницу и попробуйте снова, либо откройте инструмент по обычной ссылке без ?report=...</p></div>`;
+    }
+    return; // не запускаем обычную форму поверх отчёта
+  }
+
+  await refreshSavedList();
+
+  let restored = false;
+  try{
+    const last = await storeGet('last-active-id', false);
+    if(last && last.value && state.savedList.find(s=>s.id===last.value)){
+      await openSaved(last.value);
+      restored = true;
+    }
+  }catch(e){}
+
+  if(!restored && state.dishes.length===0){
+    const d = newDish('Латте');
+    d.sellPrice = 9;
+    d.packaging = 0.6;
+    d.ingredients = [
+      {name:'Кофе в зёрнах', unit:'г', pkgPrice:38, pkgQty:1000, usedQty:18, modifier:false},
+      {name:'Молоко', unit:'мл', pkgPrice:3.2, pkgQty:1000, usedQty:200, modifier:false},
+      {name:'Сироп (по запросу)', unit:'мл', pkgPrice:14, pkgQty:700, usedQty:10, modifier:true}
+    ];
+    state.dishes.push(d);
+  }
+  render();
+}
+init();
+</script>
+</body>
+</html>
