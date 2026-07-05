@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Точка безубыточности и занятость — гостиница</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --espresso:#1A2B2E;
+    --espresso-2:#24393D;
+    --paper:#F7F5EF;
+    --paper-2:#EFEAE0;
+    --gold:#B08D57;
+    --gold-2:#D4AF6A;
+    --ink:#1D2624;
+    --ink-soft:#5E6B68;
+    --green:#3E7C59;
+    --red:#B6462F;
+    --line:#DED6C4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--espresso);
+    background-image: radial-gradient(circle at 15% 10%, #24393D 0%, #1A2B2E 55%);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--gold);color:var(--espresso);}
+
+  .app{max-width:1180px;margin:0 auto;padding:28px 18px 80px;}
+
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid rgba(212,175,106,.25);padding-bottom:18px;}
+  .brand-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-2);margin:0 0 6px;}
+  h1.brand{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:.01em;margin:0;color:var(--paper);text-transform:uppercase;}
+  .brand small{display:block;font-family:'Inter',sans-serif;font-weight:400;text-transform:none;font-size:14px;color:#C7BFA9;margin-top:6px;letter-spacing:0;}
+  .mode-switch{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .mode-switch button{background:transparent;border:1px solid rgba(212,175,106,.4);color:#C7BFA9;padding:8px 12px;border-radius:3px;cursor:pointer;letter-spacing:.05em;}
+  .mode-switch button.active{background:var(--gold);border-color:var(--gold);color:var(--espresso);font-weight:700;}
+
+  .tabs{display:flex;gap:2px;margin-bottom:22px;flex-wrap:wrap;}
+  .tab{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;letter-spacing:.04em;padding:12px 18px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,106,.18);border-bottom:none;color:#C7BFA9;cursor:pointer;}
+  .tab.active{background:var(--paper);color:var(--espresso);font-weight:700;border-color:var(--paper);}
+
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--paper);color:var(--ink);border-radius:2px;padding:26px;}
+  .panel h2{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:20px;letter-spacing:.03em;margin:0 0 4px;color:var(--espresso);}
+  .panel .sub{font-size:13px;color:var(--ink-soft);margin:0 0 20px;}
+
+  label.field-label{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:5px;}
+  input[type=text],input[type=number],input[type=tel],select{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);
+  }
+  input[type=text]{font-family:'Inter',sans-serif;}
+  input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .row{display:grid;gap:10px;margin-bottom:12px;}
+  .row.r2{grid-template-columns:1fr 1fr;}
+  .row.r3{grid-template-columns:2fr 1fr 1fr;}
+  @media (max-width:640px){.row.r3{grid-template-columns:1fr;}}
+
+  .btn{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:13px;font-weight:600;padding:11px 18px;border-radius:2px;border:none;cursor:pointer;}
+  .btn-primary{background:var(--espresso);color:var(--gold-2);}
+  .btn-primary:hover{background:#132022;}
+  .btn-ghost{background:transparent;border:1px solid var(--ink-soft);color:var(--ink-soft);}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);}
+  .btn-gold{background:var(--gold);color:#fff;}
+  .btn-sm{padding:7px 10px;font-size:11px;}
+  .btn:disabled{opacity:.55;cursor:default;}
+
+  .room-card{border:1px solid var(--line);border-radius:2px;padding:16px 16px 12px;margin-bottom:14px;background:#fff;}
+  .room-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .room-card-head input[type=text]{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;border:none;border-bottom:1px dashed var(--line);border-radius:0;padding:4px 0;flex:1;min-width:0;}
+  .room-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+  @media (max-width:640px){.room-row{grid-template-columns:1fr;}}
+  .tiny{font-size:11px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .room-stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .room-stats b{display:block;font-size:16px;color:var(--espresso);}
+  .fc-good{color:var(--green);}
+  .fc-bad{color:var(--red);}
+
+  .exp-group{margin-bottom:22px;}
+  .exp-group h3{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;letter-spacing:.05em;color:var(--ink-soft);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .exp-row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin-bottom:8px;}
+  .exp-row span{font-size:13px;}
+
+  .receipt{background:var(--paper);color:var(--ink);border-radius:2px;padding:22px 20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;position:sticky;top:20px;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(0,0,0,.025) 28px);
+  }
+  .receipt-title{text-align:center;font-family:'Oswald',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
+  .receipt-sub{text-align:center;font-size:10px;color:var(--ink-soft);margin-bottom:14px;}
+  .receipt hr{border:none;border-top:1px dashed var(--ink-soft);margin:10px 0;}
+  .receipt-line{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
+  .receipt-line.total{font-weight:700;font-size:14px;margin-top:6px;}
+  .receipt-line .l{color:var(--ink-soft);}
+  .receipt-zig{height:8px;background:
+    linear-gradient(-45deg, var(--espresso) 5px, transparent 0),
+    linear-gradient(45deg, var(--espresso) 5px, transparent 0);
+    background-repeat:repeat-x;background-size:12px 12px;background-position:left bottom;margin-top:-22px;}
+
+  .result-big{text-align:center;padding:26px 10px;}
+  .result-big .num{font-family:'Oswald',sans-serif;font-size:44px;color:var(--espresso);font-weight:700;line-height:1;}
+  .result-big .cap{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px;}
+
+  .send-box{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .send-box a.btn{text-decoration:none;display:inline-block;}
+
+  .badge-id{display:inline-block;font-family:'JetBrains Mono',monospace;background:var(--espresso);color:var(--gold-2);padding:6px 12px;border-radius:2px;font-size:13px;letter-spacing:.05em;margin-top:10px;}
+
+  footer.app-footer{text-align:center;margin-top:40px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8770;}
+  footer.app-footer button{background:none;border:none;color:#8f8770;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:11px;}
+
+  .lookup-result{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
+  .warn-box{background:#F2EDE0;border:1px solid #D4AF6A;color:#5C4A22;padding:12px 14px;border-radius:2px;font-size:12.5px;margin-bottom:16px;}
+  .empty-note{font-size:13px;color:var(--ink-soft);font-style:italic;padding:10px 0;}
+
+  /* ===== ПЕЧАТНАЯ ВЕРСИЯ ОТЧЁТА (для PDF) =====
+     ВАЖНО: см. playbook-calculator-pdf.md — стили вынесены из @media print в обычные правила,
+     потому что html2canvas снимает блок в обычном режиме экрана, не в режиме печати.
+     Блок скрыт через display:none и временно показывается на весь экран только на момент
+     самого снимка (см. downloadReportPdf). Высота — естественная (auto), НЕ height:100%/overflow:auto
+     (иначе html2canvas обрежет захват до размера окна вместо реальной высоты содержимого). */
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; color:#1D2624; z-index:9999; padding:24px; box-sizing:border-box; }
+  .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#B08D57;text-align:center;margin-bottom:10px;}
+  .pr-header{text-align:center;border-bottom:3px solid #1A2B2E;padding-bottom:14px;margin-bottom:20px;}
+  .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#1A2B2E;}
+  .pr-header .pr-client{font-family:'Inter',sans-serif;font-size:15px;color:#1D2624;margin:0 0 4px;font-weight:600;}
+  .pr-header p{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5E6B68;margin:0;}
+  .pr-block{margin-bottom:22px;}
+  .pr-block h2{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;border-bottom:1px solid #DED6C4;padding-bottom:6px;margin-bottom:10px;color:#1A2B2E;}
+  .pr-big{text-align:center;background:#F2EDE0;border:2px solid #B08D57;border-radius:6px;padding:16px;margin-bottom:20px;}
+  .pr-big .val{font-family:'Oswald',sans-serif;font-size:34px;color:#1A2B2E;font-weight:700;}
+  .pr-big .val2{font-family:'Oswald',sans-serif;font-size:18px;color:#1A2B2E;font-weight:600;margin-top:6px;}
+  .pr-big .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5E6B68;text-transform:uppercase;}
+  table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;color:#1D2624;}
+  table.pr-table th{text-align:left;border-bottom:2px solid #1A2B2E;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;color:#1A2B2E;}
+  table.pr-table td{padding:6px 8px;border-bottom:1px solid #DED6C4;color:#1D2624;}
+  table.pr-table tr:nth-child(even){background:#F2EDE0;}
+  .pr-footer{margin-top:30px;font-size:10px;color:#5E6B68;text-align:center;font-family:'JetBrains Mono',monospace;border-top:1px solid #DED6C4;padding-top:12px;}
+  .pr-footer b{color:#1A2B2E;}
+  @media print{
+    body *{visibility:hidden;}
+    #printable-report, #printable-report *{visibility:visible;}
+    #printable-report{display:block !important;position:absolute;left:0;top:0;width:100%;padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+/* ================= STORAGE HELPERS (с откатом на localStorage) ================= */
+function hasClaudeStorage(){ return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.set === 'function'; }
+async function storeSet(key, value, shared){
+  if(hasClaudeStorage()){
+    try{ const r = await window.storage.set(key, value, !!shared); if(r) return r; }catch(e){ console.warn('Хранилище Claude недоступно, использую localStorage'); }
+  }
+  if(shared) return null;
+  try{ localStorage.setItem('hotel-calc:'+key, value); return {key,value,shared:false}; }catch(e){ console.warn(e); return null; }
+}
+async function storeGet(key, shared){
+  if(hasClaudeStorage()){
+    try{ const r = await window.storage.get(key, !!shared); if(r) return r; }catch(e){ console.warn('Хранилище Claude недоступно, использую localStorage'); }
+  }
+  if(shared) return null;
+  try{ const v = localStorage.getItem('hotel-calc:'+key); return v!==null ? {key,value:v,shared:false} : null; }catch(e){ return null; }
+}
+async function storeDelete(key, shared){
+  if(hasClaudeStorage()){
+    try{ await window.storage.delete(key, !!shared); return true; }catch(e){ console.warn('Хранилище Claude недоступно при удалении, пробую localStorage'); }
+  }
+  if(shared) return false;
+  try{ localStorage.removeItem('hotel-calc:'+key); return true; }catch(e){ console.warn(e); return false; }
+}
+
+/* ================= КОМПАКТНАЯ УПАКОВКА ДАННЫХ ОТЧЁТА =================
+   См. playbook-calculator-pdf.md, п.2. Позиционные массивы без имён ключей + без хранения
+   производных значений (breakeven пересчитывается на приёме) — держит длину ссылки далеко
+   от общепринятого предела ~2000 символов. */
+function packRoomType(r){
+  return [r.id, r.name, r.roomCount, r.price, r.variableCost];
+}
+function unpackRoomType(arr){
+  return { id: arr[0], name: arr[1], roomCount: arr[2], price: arr[3], variableCost: arr[4] };
+}
+function packReportPayload(payload){
+  return {
+    i: payload.id,
+    t: Math.floor(new Date(payload.date).getTime()/1000),
+    c: payload.currency,
+    r: payload.roomTypes.map(packRoomType),
+    f: payload.fixed,
+    v: [payload.variablePct.otaCommission, payload.variablePct.paymentProcessing, payload.variablePct.other],
+    cn: payload.clientName || '',
+    cc: payload.clientCompany || '',
+    cp: payload.clientPhone || ''
+  };
+}
+function unpackReportPayload(c){
+  const roomTypes = (c.r||[]).map(unpackRoomType);
+  const fixed = c.f || [];
+  const variablePct = { otaCommission: (c.v||[])[0]||0, paymentProcessing: (c.v||[])[1]||0, other: (c.v||[])[2]||0 };
+  return {
+    id: c.i,
+    date: new Date((c.t||0)*1000).toISOString(),
+    currency: c.c,
+    roomTypes, fixed, variablePct,
+    breakeven: computeBreakevenFor(roomTypes, fixed, variablePct),
+    clientName: c.cn, clientCompany: c.cc, clientPhone: c.cp
+  };
+}
+
+/* ================= URL DATA ENCODING ================= */
+function buildReportUrl(payload){
+  const base = window.location.origin + window.location.pathname;
+  const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(packReportPayload(payload)));
+  return base + '?report=' + encodeURIComponent(compressed);
+}
+let lastReportParseError = null;
+function readReportFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('report');
+  if(!raw) return null;
+  lastReportParseError = null;
+  let decompressed;
+  try{
+    decompressed = LZString.decompressFromEncodedURIComponent(raw);
+  }catch(e){
+    lastReportParseError = 'LZString.decompressFromEncodedURIComponent выбросил исключение: ' + (e && e.message ? e.message : String(e));
+    return null;
+  }
+  if(decompressed === null || decompressed === undefined || decompressed === ''){
+    lastReportParseError = 'Декомпрессия вернула пустой результат — сжатая строка повреждена или обрезана при копировании/передаче.';
+    return null;
+  }
+  try{
+    const compact = JSON.parse(decompressed);
+    return unpackReportPayload(compact);
+  }catch(e){
+    lastReportParseError = 'JSON.parse не смог разобрать результат декомпрессии: ' + (e && e.message ? e.message : String(e)) + '. Первые 80 символов результата: ' + decompressed.slice(0,80);
+    return null;
+  }
+}
+
+/* ================= NUMBER HELPERS ================= */
+function toNum(v){
+  if(v===null||v===undefined) return 0;
+  const s = String(v).trim().replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+/* ================= STATE ================= */
+let lastReportData = null;
+let state = {
+  view: "client",
+  tab: "rooms",           // rooms | expenses | result | saved | lookup | adminset
+  currency: "₾",
+  settings: { whatsapp: "995579145634", reviewWhatsapp: "995591244075", telegram: "", pin: "2003", providerName: "Order Profit" },
+  roomTypes: [],
+  fixed: [
+    ["Аренда / налог на недвижимость",0],["Оклады персонала (ресепшн, горничные, охрана)",0],
+    ["Налоги на зарплату",0],["Коммунальные услуги",0],["Интернет и связь",0],
+    ["Клининг общих зон",0],["Охрана / видеонаблюдение",0],["Бухгалтерия / юр. сопровождение",0],
+    ["Лицензии и разрешения",0],["Обслуживание оборудования (лифты, бассейн, кондиционеры)",0],
+    ["ПО (система бронирования, CRM)",0],["Маркетинг (фикс. бюджет)",0],["Страхование",0],
+    ["Ремонт и обслуживание номеров",0],["Прочие постоянные",0]
+  ],
+  variablePct: { otaCommission: 15, paymentProcessing: 2.5, other: 0 },
+  lastSubmitId: null,
+  clientName: "",
+  clientCompany: "",
+  clientPhone: "",
+  manualSendUrl: null,
+  pendingSend: null,
+  lastReportLink: null,
+  lastReportLinkCopied: false,
+  savedList: [],
+  currentSavedId: null,
+  currentSavedName: null
+};
+
+function newRoomType(name){
+  return { id: crypto.randomUUID().slice(0,6), name: name||"Новый тип номера", roomCount: 1, price: 0, variableCost: 0 };
+}
+
+/* Переменная стоимость на заселение = расходы на клининг/расходники (variableCost) +
+   комиссии/эквайринг как % от цены. Аналог dishBaseCost/foodCostPct из кафе-калькулятора,
+   но переменная часть здесь в основном не "ингредиенты", а % от выручки (агрегаторы). */
+function roomMarginPerNight(r, variablePct){
+  const price = toNum(r.price);
+  const pctTotal = toNum(variablePct.otaCommission) + toNum(variablePct.paymentProcessing) + toNum(variablePct.other);
+  const pctCost = price * (pctTotal/100);
+  return price - toNum(r.variableCost) - pctCost;
+}
+function roomMarginPct(r, variablePct){
+  const price = toNum(r.price);
+  if(price<=0) return 0;
+  return (roomMarginPerNight(r, variablePct)/price)*100;
+}
+
+/* ================= CALC: ТОЧКА БЕЗУБЫТОЧНОСТИ ПО ЗАНЯТОСТИ ================= */
+function computeBreakevenFor(roomTypesArg, fixedArg, variablePctArg){
+  const totalFixed = fixedArg.reduce((s,[,v])=>s+toNum(v),0);
+  const totalRooms = roomTypesArg.reduce((s,r)=>s+toNum(r.roomCount),0);
+  const pctTotal = toNum(variablePctArg.otaCommission) + toNum(variablePctArg.paymentProcessing) + toNum(variablePctArg.other);
+
+  let weightedADR = 0, weightedMargin = 0;
+  if(totalRooms>0){
+    weightedADR = roomTypesArg.reduce((s,r)=>s+toNum(r.price)*toNum(r.roomCount),0)/totalRooms;
+    weightedMargin = roomTypesArg.reduce((s,r)=>s+roomMarginPerNight(r, variablePctArg)*toNum(r.roomCount),0)/totalRooms;
+  }
+
+  let breakevenRoomNights = null, breakevenOccupancyPct = null, breakevenRevenue = null, roomNightsPerDay = null;
+  if(weightedMargin > 0.001 && totalFixed>0){
+    breakevenRoomNights = totalFixed / weightedMargin;
+    breakevenRevenue = breakevenRoomNights * weightedADR;
+    roomNightsPerDay = breakevenRoomNights / 30;
+    if(totalRooms>0){
+      breakevenOccupancyPct = (roomNightsPerDay / totalRooms) * 100;
+    }
+  }
+  return { totalFixed, totalRooms, pctTotal, weightedADR, weightedMargin, breakevenRoomNights, breakevenOccupancyPct, breakevenRevenue, roomNightsPerDay };
+}
+function computeBreakeven(){
+  return computeBreakevenFor(state.roomTypes, state.fixed, state.variablePct);
+}
+
+/* ================= RENDER ================= */
+const app = document.getElementById("app");
+
+function fmt(n, dec){
+  if(n===null||n===undefined||isNaN(n)) return "—";
+  const d = dec===undefined ? 2 : dec;
+  const fixed = Number(n).toFixed(d);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return parts.length>1 ? parts[0]+'.'+parts[1] : parts[0];
+}
+
+function render(){
+  const activeEl = document.activeElement;
+  const activeId = (activeEl && activeEl.id) ? activeEl.id : null;
+  const selStart = (activeEl && 'selectionStart' in activeEl) ? activeEl.selectionStart : null;
+  const selEnd = (activeEl && 'selectionEnd' in activeEl) ? activeEl.selectionEnd : null;
+
+  const bk = computeBreakeven();
+  app.innerHTML = `
+    <header class="top">
+      <div>
+        <p class="brand-eyebrow">Гостиница · Точка безубыточности · Занятость</p>
+        <h1 class="brand">Калькулятор&nbsp;занятости<small>Отели и гестхаусы — от типа номера до точки безубыточности</small></h1>
+      </div>
+      <div class="mode-switch">
+        <button data-act="setview" data-view="client" class="${state.view==='client'?'active':''}">Режим клиента</button>
+        <button data-act="setview" data-view="admin" class="${state.view==='admin'?'active':''}">Админ</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab ${state.tab==='rooms'?'active':''}" data-act="tab" data-tab="rooms">1 · Номера</div>
+      <div class="tab ${state.tab==='expenses'?'active':''}" data-act="tab" data-tab="expenses">2 · Расходы</div>
+      <div class="tab ${state.tab==='result'?'active':''}" data-act="tab" data-tab="result">3 · Итог</div>
+      <div class="tab ${state.tab==='saved'?'active':''}" data-act="tab" data-tab="saved">Мои расчёты</div>
+      ${state.view==='admin' ? `<div class="tab ${state.tab==='lookup'?'active':''}" data-act="tab" data-tab="lookup">Заявки клиентов</div>
+      <div class="tab ${state.tab==='adminset'?'active':''}" data-act="tab" data-tab="adminset">Настройки</div>` : ``}
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        ${state.tab==='rooms' ? renderRoomsTab() : ''}
+        ${state.tab==='expenses' ? renderExpensesTab() : ''}
+        ${state.tab==='result' ? renderResultTab(bk) : ''}
+        ${state.tab==='saved' ? renderSavedTab() : ''}
+        ${state.tab==='lookup' ? renderLookupTab() : ''}
+        ${state.tab==='adminset' ? renderAdminSettingsTab() : ''}
+      </div>
+      <div>${state.view==='admin' ? renderReceipt(bk) : renderClientReceipt(bk)}</div>
+    </div>
+
+    <footer class="app-footer">
+      Все расчёты выполняются локально в этом инструменте. · <button data-act="setview" data-view="${state.view==='admin'?'client':'admin'}">${state.view==='admin' ? 'Выйти из режима администратора' : 'Я администратор'}</button>
+    </footer>
+  `;
+
+  if(activeId){
+    const el2 = document.getElementById(activeId);
+    if(el2){
+      el2.focus();
+      if(selStart!=null && el2.setSelectionRange){
+        try{ el2.setSelectionRange(selStart, selEnd); }catch(e){}
+      }
+    }
+  }
+}
+
+function renderRoomsTab(){
+  return `
+    <h2>Номерной фонд: тип номера → цена → переменные расходы</h2>
+    <p class="sub">Заполните каждый тип номера так, как он у вас заведён: сколько номеров этого типа, цена за ночь (ADR), и расходы на заселение — клининг, расходники, амортизация текстиля и т.п. Комиссии агрегаторов и эквайринг указываются один раз для всей гостиницы на вкладке «Расходы».</p>
+    ${state.roomTypes.length===0 ? '<p class="empty-note">Пока ни одного типа номера. Добавьте первый — например, «Стандарт».</p>' : ''}
+    ${state.roomTypes.map(r=>renderRoomCard(r)).join('')}
+    <button class="btn btn-primary" data-act="add-room">+ Добавить тип номера</button>
+  `;
+}
+
+function renderRoomCard(r){
+  const margin = roomMarginPerNight(r, state.variablePct);
+  const marginPct = roomMarginPct(r, state.variablePct);
+  const mClass = marginPct===0 ? '' : (marginPct>=40 ? 'fc-good' : 'fc-bad');
+  return `
+  <div class="room-card" data-room="${r.id}">
+    <div class="room-card-head">
+      <input type="text" id="roomname-${r.id}" value="${escapeHtml(r.name)}" data-act="room-name" data-room="${r.id}" placeholder="Название типа номера">
+      <button class="btn btn-ghost btn-sm" data-act="dup-room" data-room="${r.id}">Дублировать тип</button>
+      <button class="btn btn-danger btn-sm" data-act="del-room" data-room="${r.id}">Удалить</button>
+    </div>
+    <div class="room-row">
+      <div>
+        <label class="field-label">Количество номеров этого типа</label>
+        <input type="text" inputmode="decimal" id="roomcount-${r.id}" value="${r.roomCount}" data-act="room-count" data-room="${r.id}">
+      </div>
+      <div>
+        <label class="field-label">Цена за ночь (ADR), ${state.currency}</label>
+        <input type="text" inputmode="decimal" id="roomprice-${r.id}" value="${r.price}" data-act="room-price" data-room="${r.id}">
+      </div>
+      <div>
+        <label class="field-label">Расход на заселение (клининг и т.п.), ${state.currency}</label>
+        <input type="text" inputmode="decimal" id="roomvarcost-${r.id}" value="${r.variableCost}" data-act="room-varcost" data-room="${r.id}">
+      </div>
+    </div>
+    <div class="room-stats" style="${state.view==='admin'?'':'display:none;'}">
+      <div><span class="tiny">Маржа за ночь</span><b>${fmt(margin)} ${state.currency}</b></div>
+      <div><span class="tiny">Маржа, %</span><b class="${mClass}">${marginPct?fmt(marginPct,1)+'%':'—'}</b></div>
+      <div><span class="tiny">Номеро-ночей в мес. (при 100%)</span><b>${fmt(toNum(r.roomCount)*30,0)}</b></div>
+    </div>
+    ${state.view!=='admin' ? `<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);">Данные сохранены. Точку безубыточности по занятости вы увидите на шаге «Итог».</p>` : ''}
+  </div>`;
+}
+
+function renderExpensesTab(){
+  return `
+    <h2>Расходы гостиницы</h2>
+    <p class="sub">Постоянные — платите каждый месяц независимо от занятости. Переменные — растут вместе с выручкой, задаются в процентах.</p>
+    <div class="exp-group">
+      <h3>Постоянные расходы, ${state.currency} / мес</h3>
+      ${state.fixed.map((f,i)=>`
+        <div class="exp-row">
+          <span>${f[0]}</span>
+          <input type="text" inputmode="decimal" id="fixedval-${i}" value="${f[1]}" data-act="fixed-val" data-idx="${i}">
+        </div>`).join('')}
+      <button class="btn btn-ghost btn-sm" data-act="add-fixed" style="margin-top:6px;">+ Своя статья расхода</button>
+    </div>
+    <div class="exp-group">
+      <h3>Переменные расходы, % от выручки</h3>
+      <div class="exp-row"><span>Комиссия агрегаторов (Booking.com и т.п.)</span><input type="text" inputmode="decimal" id="var-ota" value="${state.variablePct.otaCommission}" data-act="var-ota"></div>
+      <div class="exp-row"><span>Эквайринг / комиссия платежей</span><input type="text" inputmode="decimal" id="var-payment" value="${state.variablePct.paymentProcessing}" data-act="var-payment"></div>
+      <div class="exp-row"><span>Прочие переменные</span><input type="text" inputmode="decimal" id="var-other" value="${state.variablePct.other}" data-act="var-other"></div>
+      <p class="tiny" style="margin-top:8px;">⚠ Комиссия агрегаторов обычно 15–20% — это одна из крупнейших переменных статей у гостиницы, в отличие от кафе. Не занижайте её «на глаз».</p>
+    </div>
+  `;
+}
+
+function renderResultTab(bk){
+  const okOcc = bk.breakevenOccupancyPct!==null;
+  return `
+    <h2>Точка безубыточности по занятости</h2>
+    <p class="sub">Какой процент номеров нужно продавать в месяц, чтобы выйти в ноль — ниже этой занятости гостиница работает в минус, выше — в плюс.</p>
+    ${!okOcc ? `<div class="warn-box">Не хватает данных: заполните хотя бы один постоянный расход и цены хотя бы одного типа номера (вкладки «Номера» и «Расходы»).</div>` : ''}
+
+    ${state.view==='admin' ? `
+    <div class="row r2">
+      <div><span class="tiny">Постоянные расходы / мес</span><br><b>${fmt(bk.totalFixed,0)} ${state.currency}</b></div>
+      <div><span class="tiny">Всего номеров</span><br><b>${fmt(bk.totalRooms,0)}</b></div>
+      <div><span class="tiny">Средняя цена (ADR), взвеш.</span><br><b>${fmt(bk.weightedADR,1)} ${state.currency}</b></div>
+      <div><span class="tiny">Переменные %, суммарно</span><br><b>${fmt(bk.pctTotal,1)}%</b></div>
+    </div>
+    ${okOcc ? `
+    <div class="result-big">
+      <div class="num">${fmt(bk.breakevenOccupancyPct,1)}%</div>
+      <div class="cap">Занятость для безубыточности</div>
+    </div>
+    <div class="row r2">
+      <div style="text-align:center;"><div class="num" style="font-size:26px;">${fmt(bk.breakevenRevenue,0)} ${state.currency}</div><div class="cap">выручка/месяц</div></div>
+      <div style="text-align:center;"><div class="num" style="font-size:26px;">${fmt(bk.roomNightsPerDay,1)}</div><div class="cap">номеро-ночей/день</div></div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-gold" data-act="admin-send-report">Отправить результат на внутренний WhatsApp</button>
+    </div>
+    ` : ''}
+    ` : `
+    <div class="empty-note" style="text-align:center;padding:30px 10px;">Расчёт проведён. Результат вы не увидите на этом экране — он будет обработан отдельно.</div>
+    `}
+
+    ${state.view==='client' ? renderClientSendBlock() : ''}
+  `;
+}
+
+function renderClientSendBlock(){
+  return `
+    <hr style="margin:24px 0;border:none;border-top:1px solid var(--line);">
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Ваши данные для персонального отчёта</h3>
+    <p class="sub" style="margin-bottom:14px;">Заполните обязательно — эти данные попадут в шапку итогового отчёта.</p>
+    <div class="row r2" style="max-width:480px;">
+      <div>
+        <label class="field-label">Имя <span style="color:var(--red);">*</span></label>
+        <input type="text" id="client-name" placeholder="Как к вам обращаться" value="${escapeHtml(state.clientName||'')}">
+      </div>
+      <div>
+        <label class="field-label">Гостиница / название <span style="color:var(--red);">*</span></label>
+        <input type="text" id="client-company" placeholder="Напр. Villa Sunrise" value="${escapeHtml(state.clientCompany||'')}">
+      </div>
+    </div>
+    <div style="max-width:340px;margin-bottom:18px;">
+      <label class="field-label">Телефон для связи <span style="color:var(--red);">*</span></label>
+      <input type="text" id="client-phone" placeholder="Напр. 995xxxxxxxxx" value="${escapeHtml(state.clientPhone||'')}">
+    </div>
+
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Отправить данные на обработку</h3>
+    <p class="sub" style="margin-bottom:14px;">Мы получим ваши данные и пришлём готовый расчёт точки безубыточности по занятости в переписке.</p>
+
+    ${state.pendingSend ? `
+    <div class="warn-box" style="background:#EAF3EC;border-color:#3E7C59;color:#1f4a30;">
+      <b>${state.lastReportLinkCopied ? '✓ Ссылка скопирована в буфер обмена.' : '⚠ Автокопирование не сработало.'}</b>
+      <p style="margin:8px 0 0;">Дальше откроется WhatsApp с коротким сообщением. Перед отправкой обязательно:<br>
+      1. Нажмите и удерживайте поле ввода сообщения.<br>
+      2. Выберите «Вставить».<br>
+      3. Убедитесь, что ссылка появилась в тексте — и только потом отправляйте.</p>
+    </div>
+    ${state.lastReportLink ? `<div style="max-width:480px;margin:0 auto 14px;">
+      <label class="field-label">Ссылка на отчёт (на случай, если вставка не сработает)</label>
+      <input type="text" readonly value="${state.lastReportLink}" onclick="this.select();" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+    </div>` : ''}
+    <div class="send-box">
+      <button class="btn btn-gold" data-act="confirm-send">Понятно, открыть WhatsApp</button>
+      <button class="btn btn-ghost" data-act="cancel-send">Отмена</button>
+    </div>
+    ` : `
+    <div class="send-box">
+      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">Расчёт точки безубыточности по занятости</a>
+      ${state.settings.telegram ? `<a class="btn btn-gold" data-act="send" data-channel="telegram" href="#">Отправить в Telegram</a>` : ''}
+    </div>
+    `}
+    ${state.lastSubmitId ? `<div style="text-align:center;"><span class="badge-id">ID расчёта: ${state.lastSubmitId}</span></div>` : ''}
+    ${state.manualSendUrl ? `<div style="text-align:center;margin-top:10px;"><a href="${state.manualSendUrl}" target="_blank" class="btn btn-primary btn-sm">Нажмите здесь, чтобы открыть WhatsApp вручную</a></div>` : ''}
+  `;
+}
+
+function renderLookupTab(){
+  return `
+    <h2>Заявки клиентов</h2>
+    <p class="sub">Откройте ссылку из сообщения клиента напрямую в браузере — отчёт откроется автоматически (спросит PIN). Если ссылка пришла текстом и не открывается сама — вставьте её сюда целиком.</p>
+    <div class="row" style="max-width:640px;">
+      <input type="text" id="lookup-url" placeholder="Вставьте ссылку из сообщения клиента (https://...?report=...)">
+      <button class="btn btn-primary" data-act="do-lookup" style="max-width:220px;">Открыть отчёт</button>
+    </div>
+    <div id="lookup-out"></div>
+  `;
+}
+
+function renderAdminSettingsTab(){
+  return `
+    <h2>Настройки администратора</h2>
+    <div class="row r2">
+      <div><label class="field-label">WhatsApp клиента (сюда приходят сырые данные)</label><input type="text" id="set-wa" value="${state.settings.whatsapp}"></div>
+      <div><label class="field-label">WhatsApp для анализа (сюда — готовый отчёт по ID)</label><input type="text" id="set-wa-review" value="${state.settings.reviewWhatsapp}"></div>
+    </div>
+    <div class="row r2">
+      <div><label class="field-label">Telegram-юзернейм (без @, необязательно)</label><input type="text" id="set-tg" value="${state.settings.telegram}"></div>
+      <div><label class="field-label">Валюта, символ</label><input type="text" id="set-cur" value="${state.currency}"></div>
+    </div>
+    <div class="row r2">
+      <div><label class="field-label">PIN админ-режима</label><input type="text" id="set-pin" value="${state.settings.pin}"></div>
+      <div><label class="field-label">Название вашей компании (в шапке PDF-отчёта)</label><input type="text" id="set-provider" value="${escapeHtml(state.settings.providerName||'')}"></div>
+    </div>
+    <button class="btn btn-primary" data-act="save-settings">Сохранить настройки</button>
+    <p class="tiny" style="margin-top:10px;">PIN — защита от случайного захода клиента в админ-режим, а не от целенаправленного взлома.</p>
+  `;
+}
+
+function renderSavedTab(){
+  return `
+    <h2>Мои расчёты</h2>
+    <p class="sub">Сохраните форму, чтобы не вводить номерной фонд заново. Каждая сохранённая форма — отдельная копия.</p>
+    ${state.currentSavedId ? `
+      <div class="warn-box" style="background:#EAF3EC;border-color:#3E7C59;color:#1f4a30;">
+        Сейчас открыт расчёт «<b>${escapeHtml(state.currentSavedName||'')}</b>». Изменения не сохраняются автоматически.
+        <div style="margin-top:10px;"><button class="btn btn-primary btn-sm" data-act="update-current">Обновить «${escapeHtml(state.currentSavedName||'')}»</button></div>
+      </div>
+    ` : ''}
+    <div class="row r2" style="max-width:480px;">
+      <input type="text" id="new-save-name" placeholder="Название формы, напр. «Гостиница Villa Sunrise»">
+      <button class="btn btn-primary" data-act="save-new">Сохранить как новую</button>
+    </div>
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:22px;border-bottom:1px solid var(--line);padding-bottom:6px;">Сохранённые формы</h3>
+    ${state.savedList.length===0 ? '<p class="empty-note">Пока ничего не сохранено.</p>' : ''}
+    ${state.savedList.map(s=>`
+      <div class="exp-row" style="grid-template-columns:1fr auto auto auto;align-items:center;">
+        <span>${escapeHtml(s.name)} <span class="tiny">· ${new Date(s.updatedAt).toLocaleDateString('ru-RU')}</span></span>
+        <button class="btn btn-ghost btn-sm" data-act="open-saved" data-id="${s.id}">Открыть</button>
+        <button class="btn btn-ghost btn-sm" data-act="dup-saved" data-id="${s.id}">Дублировать форму</button>
+        <button class="btn btn-danger btn-sm" data-act="del-saved" data-id="${s.id}">Удалить</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderClientReceipt(bk){
+  return `
+    <div class="receipt">
+      <div class="receipt-title">Чек расчёта</div>
+      <div class="receipt-sub">${new Date().toLocaleDateString('ru-RU')}</div>
+      <hr>
+      <p class="tiny" style="text-align:center;padding:20px 0;">Здесь будет виден только состав ваших данных — расчёт точки безубыточности вы получите отдельно после отправки.</p>
+    </div>
+    <div class="receipt-zig"></div>
+  `;
+}
+
+function renderReceipt(bk){
+  const items = [];
+  state.roomTypes.forEach(r=>{
+    const margin = roomMarginPerNight(r, state.variablePct);
+    if(r.name) items.push([r.name, margin]);
+  });
+  return `
+    <div class="receipt">
+      <div class="receipt-title">Чек расчёта</div>
+      <div class="receipt-sub">${new Date().toLocaleDateString('ru-RU')} · ${state.view==='admin'?'режим администратора':'режим клиента'}</div>
+      <hr>
+      ${items.length ? items.map(([n,m])=>`<div class="receipt-line"><span class="l">${escapeHtml(n)}</span><span>${fmt(m)} ${state.currency}/ночь</span></div>`).join('') : '<div class="receipt-line"><span class="l">Типы номеров не добавлены</span></div>'}
+      <hr>
+      <div class="receipt-line"><span class="l">Пост. расходы/мес</span><span>${fmt(bk.totalFixed,0)} ${state.currency}</span></div>
+      <div class="receipt-line"><span class="l">Всего номеров</span><span>${fmt(bk.totalRooms,0)}</span></div>
+      <div class="receipt-line"><span class="l">ADR (взвеш.)</span><span>${fmt(bk.weightedADR,1)} ${state.currency}</span></div>
+      <hr>
+      <div class="receipt-line total"><span>Занятость безуб.</span><span>${bk.breakevenOccupancyPct?fmt(bk.breakevenOccupancyPct,1)+'%':'—'}</span></div>
+      ${bk.roomNightsPerDay?`<div class="receipt-line"><span class="l">номеро-ночей/день</span><span>${fmt(bk.roomNightsPerDay,1)}</span></div>`:''}
+    </div>
+    <div class="receipt-zig"></div>
+  `;
+}
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ================= EVENTS =================
+   Делегирование на #app — см. playbook-calculator-pdf.md, п.7. Работает для любого HTML,
+   вставленного куда угодно внутрь #app, включая контент отчёта, вставленный отдельно от
+   основного render(). */
+function bindGlobalEvents(){
+  app.addEventListener('click', (e)=>{
+    const el = e.target.closest('[data-act]');
+    if(!el || !app.contains(el)) return;
+    if(el.tagName==='INPUT' || el.tagName==='SELECT') return;
+    if(el.tagName==='A' && el.getAttribute('href')==='#') e.preventDefault();
+    handleAction(el.dataset.act, el, e);
+  });
+  app.addEventListener('input', (e)=>{
+    const el = e.target.closest('[data-act]');
+    if(!el || !app.contains(el)) return;
+    if(el.tagName!=='INPUT' && el.tagName!=='SELECT') return;
+    handleAction(el.dataset.act, el, e);
+  });
+}
+
+function findRoom(id){ return state.roomTypes.find(r=>r.id===id); }
+
+function handleAction(act, el, e){
+  switch(act){
+    case 'setview':
+      if(el.dataset.view==='admin' && state.view!=='admin'){
+        const pin = prompt('Введите PIN администратора:');
+        if(pin !== state.settings.pin){ alert('Неверный PIN'); return; }
+      }
+      state.view = el.dataset.view;
+      if(state.view==='admin' && state.tab==='result') state.tab='rooms';
+      render(); break;
+    case 'tab': state.tab = el.dataset.tab; render(); break;
+
+    case 'add-room': state.roomTypes.push(newRoomType('')); render(); break;
+    case 'dup-room': {
+      const orig = findRoom(el.dataset.room);
+      const idx = state.roomTypes.findIndex(r=>r.id===el.dataset.room);
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = crypto.randomUUID().slice(0,6);
+      copy.name = orig.name + ' (копия)';
+      state.roomTypes.splice(idx+1, 0, copy);
+      render(); break;
+    }
+    case 'del-room': state.roomTypes = state.roomTypes.filter(r=>r.id!==el.dataset.room); render(); break;
+    case 'room-name': findRoom(el.dataset.room).name = el.value; render(); break;
+    case 'room-count': findRoom(el.dataset.room).roomCount = el.value; render(); break;
+    case 'room-price': findRoom(el.dataset.room).price = el.value; render(); break;
+    case 'room-varcost': findRoom(el.dataset.room).variableCost = el.value; render(); break;
+
+    case 'fixed-val': state.fixed[parseInt(el.dataset.idx)][1] = el.value; render(); break;
+    case 'add-fixed': {
+      const name = prompt('Название статьи расхода:');
+      if(name){ state.fixed.push([name,0]); render(); }
+      break;
+    }
+    case 'var-ota': state.variablePct.otaCommission = el.value; render(); break;
+    case 'var-payment': state.variablePct.paymentProcessing = el.value; render(); break;
+    case 'var-other': state.variablePct.other = el.value; render(); break;
+
+    case 'save-new': {
+      const nameEl = document.getElementById('new-save-name');
+      const name = nameEl ? nameEl.value : '';
+      if(!name || !name.trim()){ alert('Впишите название формы.'); return; }
+      saveAsNew(name).then(()=>storeSet('last-active-id', state.currentSavedId, false));
+      break;
+    }
+    case 'update-current': updateCurrentSave(); break;
+    case 'open-saved': openSaved(el.dataset.id).then(()=>storeSet('last-active-id', el.dataset.id, false)); break;
+    case 'dup-saved': duplicateSaved(el.dataset.id); break;
+    case 'del-saved': deleteSaved(el.dataset.id); break;
+
+    case 'send': sendResult(el.dataset.channel); break;
+    case 'confirm-send': proceedToWhatsapp(); break;
+    case 'cancel-send': state.pendingSend = null; render(); break;
+    case 'admin-send-report': adminSendReport(); break;
+
+    case 'do-lookup': doLookup(); break;
+    case 'print-report': downloadReportPdf(el); break;
+    case 'copy-report': {
+      const ta = document.getElementById('report-text');
+      if(!ta) break;
+      ta.focus(); ta.select();
+      let copied = false;
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(ta.value);
+          copied = true;
+        }
+      }catch(e){}
+      if(!copied){
+        try{ document.execCommand('copy'); copied = true; }catch(e){}
+      }
+      el.textContent = copied ? 'Скопировано ✓' : 'Не удалось — выделите текст вручную';
+      setTimeout(()=>{ el.textContent = 'Копировать отчёт'; }, 2000);
+      break;
+    }
+
+    case 'save-settings': {
+      state.settings.whatsapp = document.getElementById('set-wa').value.trim();
+      state.settings.reviewWhatsapp = document.getElementById('set-wa-review').value.trim();
+      state.settings.telegram = document.getElementById('set-tg').value.trim();
+      state.currency = document.getElementById('set-cur').value.trim() || '₾';
+      state.settings.pin = document.getElementById('set-pin').value.trim() || '1234';
+      state.settings.providerName = document.getElementById('set-provider').value.trim() || 'Order Profit';
+      storeSet('settings', JSON.stringify(state.settings), false);
+      alert('Настройки сохранены на этом устройстве.');
+      render(); break;
+    }
+  }
+}
+
+/* ================= SAVED CALCULATIONS LIBRARY ================= */
+function snapshotCurrent(){
+  return { roomTypes: state.roomTypes, fixed: state.fixed, variablePct: state.variablePct, currency: state.currency };
+}
+async function refreshSavedList(){
+  const res = await storeGet('saved-list', false);
+  state.savedList = (res && res.value) ? JSON.parse(res.value) : [];
+}
+async function persistSavedList(){
+  await storeSet('saved-list', JSON.stringify(state.savedList), false);
+}
+async function saveAsNew(name){
+  if(!name || !name.trim()) return;
+  const id = crypto.randomUUID().slice(0,8);
+  await storeSet('saved-item:'+id, JSON.stringify(snapshotCurrent()), false);
+  state.savedList.unshift({ id, name: name.trim(), updatedAt: new Date().toISOString() });
+  await persistSavedList();
+  state.currentSavedId = id; state.currentSavedName = name.trim();
+  render();
+}
+async function updateCurrentSave(){
+  if(!state.currentSavedId) return;
+  await storeSet('saved-item:'+state.currentSavedId, JSON.stringify(snapshotCurrent()), false);
+  const item = state.savedList.find(s=>s.id===state.currentSavedId);
+  if(item) item.updatedAt = new Date().toISOString();
+  await persistSavedList();
+  render();
+}
+async function openSaved(id){
+  const res = await storeGet('saved-item:'+id, false);
+  if(!res) return;
+  const data = JSON.parse(res.value);
+  state.roomTypes = data.roomTypes; state.fixed = data.fixed; state.variablePct = data.variablePct;
+  state.currency = data.currency || state.currency;
+  const item = state.savedList.find(s=>s.id===id);
+  state.currentSavedId = id; state.currentSavedName = item ? item.name : null;
+  state.tab = 'rooms';
+  render();
+}
+async function duplicateSaved(id){
+  const res = await storeGet('saved-item:'+id, false);
+  if(!res) return;
+  const item = state.savedList.find(s=>s.id===id);
+  const newId = crypto.randomUUID().slice(0,8);
+  await storeSet('saved-item:'+newId, res.value, false);
+  state.savedList.unshift({ id: newId, name: (item?item.name:'Расчёт')+' (копия)', updatedAt: new Date().toISOString() });
+  await persistSavedList();
+  render();
+}
+async function deleteSaved(id){
+  if(!confirm('Удалить этот сохранённый расчёт без возможности восстановить?')) return;
+  await storeDelete('saved-item:'+id, false);
+  state.savedList = state.savedList.filter(s=>s.id!==id);
+  if(state.currentSavedId===id){ state.currentSavedId=null; state.currentSavedName=null; }
+  await persistSavedList();
+  render();
+}
+
+async function adminSendReport(){
+  const bk = computeBreakeven();
+  if(bk.breakevenOccupancyPct===null){ alert('Недостаточно данных для расчёта.'); return; }
+  const win = window.open('about:blank', '_blank');
+  const payload = { id: state.currentSavedId || crypto.randomUUID().slice(0,6), date: new Date().toISOString(), currency: state.currency, roomTypes: state.roomTypes, fixed: state.fixed, variablePct: state.variablePct };
+  const report = buildReportText(payload, bk);
+  const url = `https://wa.me/${state.settings.reviewWhatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(report)}`;
+  if(win && !win.closed){
+    win.location.href = url;
+  } else {
+    alert('Браузер заблокировал автооткрытие. Нажмите ОК и используйте ссылку ниже.');
+    state.manualSendUrl = url;
+    render();
+  }
+}
+
+/* ================= SUBMIT TO ADMIN =================
+   Два явных шага (копирование → подтверждение → отдельный переход) и синхронный вызов
+   clipboard.writeText сразу после клика — см. playbook-calculator-pdf.md, п.3-4. */
+async function sendResult(channel){
+  if(sendResult._busy) return;
+  sendResult._busy = true;
+  try{
+    await sendResultImpl(channel);
+  } finally {
+    sendResult._busy = false;
+  }
+}
+async function sendResultImpl(channel){
+  const bk = computeBreakeven();
+  if(bk.breakevenOccupancyPct===null){ alert('Сначала заполните хотя бы один тип номера с ценой и постоянные расходы.'); return; }
+
+  const nameEl = document.getElementById('client-name');
+  const companyEl = document.getElementById('client-company');
+  const phoneEl = document.getElementById('client-phone');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const company = companyEl ? companyEl.value.trim() : '';
+  const phone = phoneEl ? phoneEl.value.trim() : '';
+  if(!name){ alert('Впишите ваше имя — это обязательное поле.'); if(nameEl) nameEl.focus(); return; }
+  if(!company){ alert('Впишите название гостиницы — это обязательное поле.'); if(companyEl) companyEl.focus(); return; }
+  if(!phone){ alert('Впишите телефон для связи — это обязательное поле.'); if(phoneEl) phoneEl.focus(); return; }
+  state.clientName = name; state.clientCompany = company; state.clientPhone = phone;
+
+  const id = crypto.randomUUID().slice(0,6);
+  const payload = { id, date: new Date().toISOString(), currency: state.currency, roomTypes: state.roomTypes, fixed: state.fixed, variablePct: state.variablePct, clientName: name, clientCompany: company, clientPhone: phone };
+  state.lastSubmitId = id;
+  const reportUrl = buildReportUrl(payload);
+
+  let copied = false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(reportUrl);
+      copied = true;
+    }
+  }catch(e){ console.warn('Clipboard API отклонил запись:', e); }
+  if(!copied){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = reportUrl;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){ console.warn('Запасной способ копирования тоже не сработал:', e); }
+  }
+
+  state.lastReportLink = reportUrl;
+  state.lastReportLinkCopied = copied;
+
+  const text = copied
+    ? `Расчёт точки безубыточности по занятости\n`+
+      `Гостиница: ${company}\n`+
+      `Клиент: ${name}, тел. ${phone}\n`+
+      `ID: ${id}\n`+
+      `Ссылка на отчёт скопирована в буфер обмена — нажмите и удерживайте поле ввода в этом чате и выберите «Вставить» перед отправкой.`
+    : `Расчёт точки безубыточности по занятости\n`+
+      `Гостиница: ${company}\n`+
+      `Клиент: ${name}, тел. ${phone}\n`+
+      `ID: ${id}\n`+
+      `Не удалось скопировать ссылку автоматически — вернитесь в инструмент и скопируйте её вручную из поля на экране, затем вставьте сюда.`;
+
+  state.pendingSend = { channel, text };
+  render();
+}
+
+function proceedToWhatsapp(){
+  if(!state.pendingSend) return;
+  const { channel, text } = state.pendingSend;
+  const win = window.open('about:blank', '_blank');
+  const url = channel==='whatsapp'
+    ? `https://wa.me/${state.settings.whatsapp}?text=${encodeURIComponent(text)}`
+    : `https://t.me/${state.settings.telegram}?text=${encodeURIComponent(text)}`;
+  if(win && !win.closed){
+    win.location.href = url;
+  } else {
+    alert('Браузер заблокировал автооткрытие. Нажмите ОК и используйте ссылку, которая появится ниже.');
+    state.manualSendUrl = url;
+  }
+  state.pendingSend = null;
+  render();
+}
+
+function buildReportText(data, bkOverride){
+  const bk = bkOverride || computeBreakevenFor(data.roomTypes, data.fixed, data.variablePct);
+  let lines = [];
+  lines.push('ОТЧЁТ: ТОЧКА БЕЗУБЫТОЧНОСТИ ПО ЗАНЯТОСТИ');
+  lines.push('Гостиница: ' + (data.clientCompany || '—'));
+  lines.push('Клиент: ' + (data.clientName || '—') + (data.clientPhone ? ', тел. ' + data.clientPhone : ''));
+  lines.push('ID расчёта: ' + data.id);
+  lines.push('');
+  lines.push('— ТОЧКА БЕЗУБЫТОЧНОСТИ —');
+  lines.push('Занятость: ' + (bk.breakevenOccupancyPct!==null ? fmt(bk.breakevenOccupancyPct,1)+'%' : '—'));
+  lines.push('Выручка/мес: ' + fmt(bk.breakevenRevenue,0) + ' ' + data.currency);
+  lines.push('Номеро-ночей/день: ' + fmt(bk.roomNightsPerDay,1));
+  lines.push('Постоянные расходы/мес: ' + fmt(bk.totalFixed,0) + ' ' + data.currency);
+  lines.push('Средняя цена (ADR): ' + fmt(bk.weightedADR,1) + ' ' + data.currency);
+  lines.push('');
+  lines.push('— ПО ТИПАМ НОМЕРОВ —');
+  data.roomTypes.forEach(r=>{
+    const margin = roomMarginPerNight(r, data.variablePct);
+    const marginPct = roomMarginPct(r, data.variablePct);
+    lines.push(r.name + ' (' + r.roomCount + ' номеров):');
+    lines.push('  ADR ' + fmt(r.price) + ' ' + data.currency + ' · маржа/ночь ' + fmt(margin) + ' ' + data.currency + ' (' + (marginPct?fmt(marginPct,1)+'%':'—') + ')');
+  });
+  lines.push('');
+  lines.push('— ПОСТОЯННЫЕ РАСХОДЫ —');
+  data.fixed.filter(f=>toNum(f[1])>0).forEach(f=>{
+    lines.push('  ' + f[0] + ': ' + fmt(f[1],0) + ' ' + data.currency);
+  });
+  return lines.join('\n');
+}
+
+async function doLookup(){
+  const raw = document.getElementById('lookup-url').value.trim();
+  const out = document.getElementById('lookup-out');
+  if(!raw){ return; }
+  let data = extractReportFromInput(raw);
+  if(!data){ out.innerHTML = '<p class="empty-note">Не удалось прочитать отчёт — проверьте, что ссылка скопирована целиком.</p>'; return; }
+  renderReportInto(out, data);
+}
+function extractReportFromInput(raw){
+  try{
+    if(raw.includes('report=')){
+      const qIndex = raw.indexOf('?');
+      const params = new URLSearchParams(qIndex>=0 ? raw.slice(qIndex) : raw);
+      const p = params.get('report');
+      if(p) return unpackReportPayload(JSON.parse(LZString.decompressFromEncodedURIComponent(p)));
+    }
+    return unpackReportPayload(JSON.parse(LZString.decompressFromEncodedURIComponent(raw)));
+  }catch(e){ console.error(e); return null; }
+}
+function buildPrintableReportHtml(data){
+  const bk = data.breakeven;
+  const providerName = (state.settings.providerName || 'Order Profit').trim() || 'Order Profit';
+  const roomRows = data.roomTypes.map(r=>{
+    const margin = roomMarginPerNight(r, data.variablePct);
+    const marginPct = roomMarginPct(r, data.variablePct);
+    return `<tr><td>${escapeHtml(r.name)}</td><td>${fmt(r.roomCount,0)}</td><td>${fmt(r.price)} ${data.currency}</td><td>${fmt(margin)} ${data.currency}</td><td>${marginPct?fmt(marginPct,1)+'%':'—'}</td></tr>`;
+  }).join('');
+  const fixedRows = data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<tr><td>${escapeHtml(f[0])}</td><td>${fmt(f[1],0)} ${data.currency}</td></tr>`).join('');
+  return `
+    <div class="pr-brand">${escapeHtml(providerName)} · Финансовый расчёт для гостиничного бизнеса</div>
+    <div class="pr-header">
+      <h1>Отчёт: точка безубыточности по занятости</h1>
+      ${data.clientCompany ? `<p class="pr-client">Для: ${escapeHtml(data.clientCompany)}${data.clientName ? ' · '+escapeHtml(data.clientName) : ''}</p>` : ''}
+      <p>ID расчёта: ${escapeHtml(data.id)} · ${new Date(data.date).toLocaleDateString('ru-RU')}</p>
+    </div>
+    <div class="pr-big">
+      <div class="val">${bk.breakevenOccupancyPct!==null ? fmt(bk.breakevenOccupancyPct,1)+'%' : '—'}</div>
+      <div class="lbl">Занятость для безубыточности</div>
+      <div class="val2">${fmt(bk.breakevenRevenue,0)} ${data.currency} / мес · ${fmt(bk.roomNightsPerDay,1)} номеро-ночей/день</div>
+    </div>
+    <div class="pr-block">
+      <h2>По типам номеров</h2>
+      <table class="pr-table">
+        <tr><th>Тип номера</th><th>Кол-во</th><th>ADR</th><th>Маржа/ночь</th><th>Маржа %</th></tr>
+        ${roomRows}
+      </table>
+    </div>
+    <div class="pr-block">
+      <h2>Постоянные расходы</h2>
+      <table class="pr-table">
+        <tr><th>Статья</th><th>Сумма/мес</th></tr>
+        ${fixedRows || '<tr><td colspan="2">Не заполнены</td></tr>'}
+      </table>
+    </div>
+    <div class="pr-footer">Отчёт подготовлен <b>${escapeHtml(providerName)}</b>${data.clientCompany ? ' персонально для '+escapeHtml(data.clientCompany) : ' персонально для вашего бизнеса'}.</div>
+  `;
+}
+
+/* Скачивание настоящего PDF-файла через html2pdf.js — см. playbook-calculator-pdf.md, п.6.
+   Три отдельных задокументированных бага html2canvas учтены: (а) блок не должен быть за
+   пределами экрана — показываем на весь экран перед снимком; (б) высота естественная, без
+   height:100%/overflow:auto, плюс явные width/height в конфиг; (в) цвет проставляем ПРИНУДИТЕЛЬНО
+   как inline-стиль через JS, не полагаясь только на CSS-каскад. */
+async function downloadReportPdf(triggerEl){
+  const el = document.getElementById('printable-report');
+  if(!el){ window.print(); return; }
+  const originalLabel = triggerEl ? triggerEl.textContent : '';
+  if(triggerEl){ triggerEl.textContent = 'Готовим PDF…'; triggerEl.disabled = true; }
+  try{
+    if(typeof html2pdf === 'undefined') throw new Error('html2pdf.js не загрузился (проверьте сеть/CDN)');
+    const idPart = (lastReportData && lastReportData.id) ? lastReportData.id : 'raschet';
+
+    el.style.display = 'block';
+    el.style.color = '#1D2624';
+    window.scrollTo(0, 0);
+
+    el.querySelectorAll('th').forEach(node => { node.style.color = '#1A2B2E'; });
+    el.querySelectorAll('td, .pr-client, .pr-header p, .pr-big .lbl, .pr-big .val2, .pr-footer').forEach(node => { node.style.color = '#1D2624'; });
+    el.querySelectorAll('h1, h2, .pr-big .val').forEach(node => { node.style.color = '#1A2B2E'; });
+
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const fullWidth = Math.max(el.scrollWidth, el.offsetWidth);
+    const fullHeight = Math.max(el.scrollHeight, el.offsetHeight);
+
+    await html2pdf().from(el).set({
+      margin: 8,
+      filename: 'otchet-' + idPart + '.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, width: fullWidth, height: fullHeight, windowWidth: fullWidth, windowHeight: fullHeight },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).save();
+  }catch(e){
+    console.warn('html2pdf.js не сработал, откатываемся на системную печать:', e);
+    alert('Не удалось сформировать PDF-файл напрямую — открываю системный диалог печати. В нём выберите «Сохранить как PDF».');
+    window.print();
+  }finally{
+    el.style.display = 'none';
+    if(triggerEl){ triggerEl.textContent = originalLabel; triggerEl.disabled = false; }
+  }
+}
+
+function renderReportInto(out, data){
+  lastReportData = data;
+  const report = buildReportText(data, data.breakeven);
+  const bk = data.breakeven;
+  out.innerHTML = `
+    <div class="lookup-result">
+      <p class="tiny">Получено: ${new Date(data.date).toLocaleString('ru-RU')}${data.clientCompany ? ' · гостиница: '+escapeHtml(data.clientCompany) : ''}${data.clientName ? ' · клиент: '+escapeHtml(data.clientName) : ''}${data.clientPhone ? ' · тел. '+escapeHtml(data.clientPhone) : ''}</p>
+      <div class="row r2">
+        <div><span class="tiny">Занятость безубыточности</span><br><b>${bk.breakevenOccupancyPct!==null?fmt(bk.breakevenOccupancyPct,1)+'%':'—'}</b></div>
+        <div><span class="tiny">Номеро-ночей/день</span><br><b>${fmt(bk.roomNightsPerDay,1)}</b></div>
+      </div>
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:16px;">Типы номеров</h3>
+      ${data.roomTypes.map(r=>{
+        const margin = roomMarginPerNight(r, data.variablePct);
+        const marginPct = roomMarginPct(r, data.variablePct);
+        return `<div class="exp-row"><span>${escapeHtml(r.name)} (${r.roomCount} номеров) — ADR ${fmt(r.price)} ${data.currency}</span><span>${marginPct?fmt(marginPct,1)+'%':'—'}</span></div>`;
+      }).join('')}
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:16px;">Постоянные расходы</h3>
+      ${data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<div class="exp-row"><span>${escapeHtml(f[0])}</span><span>${fmt(f[1],0)} ${data.currency}</span></div>`).join('') || '<p class="empty-note">Не заполнены</p>'}
+
+      <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:13px;margin-top:20px;border-top:1px solid var(--line);padding-top:14px;">Отчёт для отправки клиенту</h3>
+      <textarea id="report-text" readonly style="width:100%;min-height:220px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px;border:1px solid var(--line);border-radius:2px;">${escapeHtml(report)}</textarea>
+      <div class="send-box" style="justify-content:flex-start;margin-top:10px;">
+        <button class="btn btn-primary btn-sm" data-act="copy-report">Копировать отчёт</button>
+        <a class="btn btn-gold btn-sm" href="https://wa.me/${state.settings.reviewWhatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(report)}" target="_blank">Отправить на внутренний WhatsApp</a>
+        <button class="btn btn-gold btn-sm" data-act="print-report">Скачать в PDF</button>
+      </div>
+      <p class="tiny" style="margin-top:10px;">Клиенту отправляйте вручную — скопируйте отчёт и вставьте в чат, откуда пришли его данные, только после оплаты.</p>
+    </div>
+    <div class="printable-report" id="printable-report">${buildPrintableReportHtml(data)}</div>
+  `;
+}
+
+/* ================= INIT ================= */
+async function init(){
+  try{
+    const s = await storeGet('settings', false);
+    if(s && s.value){ state.settings = {...state.settings, ...JSON.parse(s.value)}; }
+  }catch(e){}
+
+  const hasReportParam = new URLSearchParams(window.location.search).has('report');
+  const reportData = readReportFromUrl();
+  if(reportData){
+    const pin = prompt('Эта ссылка открывает детальный отчёт. Введите PIN администратора:');
+    if(pin === state.settings.pin){
+      app.innerHTML = `
+        <header class="top"><div><p class="brand-eyebrow">Отчёт по ссылке</p><h1 class="brand">Детальный отчёт<small>ID расчёта: ${escapeHtml(reportData.id||'')}</small></h1></div></header>
+        <div class="layout"><div class="panel" id="direct-report"></div><div></div></div>
+      `;
+      renderReportInto(document.getElementById('direct-report'), reportData);
+    } else {
+      app.innerHTML = `<div class="panel" style="margin-top:40px;"><h2>Неверный PIN</h2><p class="sub">Обновите страницу и попробуйте снова, либо откройте инструмент по обычной ссылке без ?report=...</p></div>`;
+    }
+    return;
+  } else if(hasReportParam){
+    app.innerHTML = `
+      <div class="panel" style="margin-top:40px;max-width:640px;margin-left:auto;margin-right:auto;">
+        <h2>Не удалось прочитать отчёт по ссылке</h2>
+        <p class="sub">В ссылке есть параметр отчёта, но расшифровать его не получилось.</p>
+        <div class="warn-box">${escapeHtml(lastReportParseError || 'Причина не определена.')}</div>
+        <p class="tiny">Скопируйте ссылку заново целиком (от https до самого конца строки) и откройте в новой вкладке.</p>
+      </div>`;
+    return;
+  }
+
+  await refreshSavedList();
+
+  let restored = false;
+  try{
+    const last = await storeGet('last-active-id', false);
+    if(last && last.value && state.savedList.find(s=>s.id===last.value)){
+      await openSaved(last.value);
+      restored = true;
+    }
+  }catch(e){}
+
+  if(!restored && state.roomTypes.length===0){
+    state.roomTypes = [
+      newRoomType('Стандарт'), newRoomType('Делюкс'), newRoomType('Люкс')
+    ];
+    state.roomTypes[0].roomCount = 10; state.roomTypes[0].price = 120; state.roomTypes[0].variableCost = 15;
+    state.roomTypes[1].roomCount = 5; state.roomTypes[1].price = 200; state.roomTypes[1].variableCost = 25;
+    state.roomTypes[2].roomCount = 2; state.roomTypes[2].price = 350; state.roomTypes[2].variableCost = 40;
+  }
+  render();
+}
+bindGlobalEvents();
+init();
+</script>
+</body>
+</html>
