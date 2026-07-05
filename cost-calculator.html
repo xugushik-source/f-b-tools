@@ -131,25 +131,33 @@
   .warn-box{background:#FCF1E9;border:1px solid #E8B84B;color:#6B4A17;padding:12px 14px;border-radius:2px;font-size:12.5px;margin-bottom:16px;}
   .empty-note{font-size:13px;color:var(--ink-soft);font-style:italic;padding:10px 0;}
 
-  /* ===== ПЕЧАТНАЯ ВЕРСИЯ ОТЧЁТА (для PDF) ===== */
-  .printable-report{display:none;}
+  /* ===== ПЕЧАТНАЯ ВЕРСИЯ ОТЧЁТА (для PDF) =====
+     ВАЖНО: стили оформления вынесены из @media print в обычные правила, потому что
+     html2pdf.js (html2canvas) делает снимок блока в обычном режиме экрана, а не в
+     режиме печати — внутри @media print эти стили были бы не видны html2canvas,
+     и PDF получился бы пустым/неоформленным. @media print ниже отвечает только
+     за запасной путь через системный диалог печати (window.print()). */
+  .printable-report{ position:absolute; left:-99999px; top:0; width:800px; background:#fff; padding:24px; box-sizing:border-box; }
+  .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C99A3D;text-align:center;margin-bottom:10px;}
+  .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
+  .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#241609;}
+  .pr-header .pr-client{font-family:'Inter',sans-serif;font-size:15px;color:#2B1B12;margin:0 0 4px;font-weight:600;}
+  .pr-header p{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;margin:0;}
+  .pr-block{margin-bottom:22px;}
+  .pr-block h2{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;border-bottom:1px solid #DCCFAE;padding-bottom:6px;margin-bottom:10px;color:#241609;}
+  .pr-big{text-align:center;background:#FBF6EC;border:2px solid #C99A3D;border-radius:6px;padding:16px;margin-bottom:20px;}
+  .pr-big .val{font-family:'Oswald',sans-serif;font-size:30px;color:#241609;font-weight:700;}
+  .pr-big .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;text-transform:uppercase;}
+  table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;}
+  table.pr-table th{text-align:left;border-bottom:2px solid #241609;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;}
+  table.pr-table td{padding:6px 8px;border-bottom:1px solid #DCCFAE;}
+  table.pr-table tr:nth-child(even){background:#FBF6EC;}
+  .pr-footer{margin-top:30px;font-size:10px;color:#6B5A48;text-align:center;font-family:'JetBrains Mono',monospace;border-top:1px solid #DCCFAE;padding-top:12px;}
+  .pr-footer b{color:#241609;}
   @media print{
     body *{visibility:hidden;}
     #printable-report, #printable-report *{visibility:visible;}
     #printable-report{display:block !important;position:absolute;left:0;top:0;width:100%;padding:20px;}
-    .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
-    .pr-header h1{font-family:'Oswald',sans-serif;font-size:24px;text-transform:uppercase;margin:0 0 4px;color:#241609;}
-    .pr-header p{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;margin:0;}
-    .pr-block{margin-bottom:22px;}
-    .pr-block h2{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;border-bottom:1px solid #DCCFAE;padding-bottom:6px;margin-bottom:10px;color:#241609;}
-    .pr-big{text-align:center;background:#FBF6EC;border:2px solid #C99A3D;border-radius:6px;padding:16px;margin-bottom:20px;}
-    .pr-big .val{font-family:'Oswald',sans-serif;font-size:30px;color:#241609;font-weight:700;}
-    .pr-big .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;text-transform:uppercase;}
-    table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;}
-    table.pr-table th{text-align:left;border-bottom:2px solid #241609;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;}
-    table.pr-table td{padding:6px 8px;border-bottom:1px solid #DCCFAE;}
-    table.pr-table tr:nth-child(even){background:#FBF6EC;}
-    .pr-footer{margin-top:30px;font-size:10px;color:#6B5A48;text-align:center;font-family:'JetBrains Mono',monospace;}
   }
 </style>
 </head>
@@ -157,6 +165,7 @@
 <div class="app" id="app"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 /* ================= STORAGE HELPERS (с откатом на localStorage) ================= */
 function hasClaudeStorage(){ return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.set === 'function'; }
@@ -224,11 +233,12 @@ function toNum(v){
 
 /* ================= STATE ================= */
 const UNITS = ["г","кг","мл","л","шт"];
+let lastReportData = null; // последний открытый отчёт (для имени PDF-файла)
 let state = {
   view: "client",        // client | admin
   tab: "dishes",          // dishes | expenses | result | admin-lookup | admin-settings
   currency: "₾",
-  settings: { whatsapp: "995579145634", reviewWhatsapp: "995591244075", telegram: "", pin: "2003" },
+  settings: { whatsapp: "995579145634", reviewWhatsapp: "995591244075", telegram: "", pin: "2003", providerName: "Order Profit" },
   dishes: [],
   fixed: [
     ["Аренда помещения",0],["Оклады персонала",0],["Налоги на зарплату",0],["Коммунальные услуги",0],
@@ -240,7 +250,9 @@ let state = {
   variablePct: { acquiring: 2.5, delivery: 0, staffBonus: 0 },
   avgCheck: 0,
   lastSubmitId: null,
-  clientContact: "",
+  clientName: "",
+  clientCompany: "",
+  clientPhone: "",
   manualSendUrl: null,
   shortenWarning: false,   // true, если сократить ссылку не удалось и отправлена длинная
   sending: false,          // true во время формирования ссылки/сокращения — блокируем повторные клики
@@ -350,7 +362,6 @@ function render(){
       Все расчёты выполняются локально в этом инструменте. · <button data-act="setview" data-view="${state.view==='admin'?'client':'admin'}">${state.view==='admin' ? 'Выйти из режима администратора' : 'Я администратор'}</button>
     </footer>
   `;
-  attachHandlers();
 
   if(activeId){
     const el2 = document.getElementById(activeId);
@@ -482,16 +493,29 @@ function renderResultTab(bk){
 
     ${state.view==='client' ? `
     <hr style="margin:24px 0;border:none;border-top:1px solid var(--line);">
+    <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Ваши данные для персонального отчёта</h3>
+    <p class="sub" style="margin-bottom:14px;">Заполните обязательно — эти данные попадут в шапку итогового отчёта и мы будем знать, кому и куда отправить результат.</p>
+    <div class="row r2" style="max-width:480px;">
+      <div>
+        <label class="field-label">Имя <span style="color:var(--red);">*</span></label>
+        <input type="text" id="client-name" placeholder="Как к вам обращаться" value="${escapeHtml(state.clientName||'')}">
+      </div>
+      <div>
+        <label class="field-label">Компания / название точки <span style="color:var(--red);">*</span></label>
+        <input type="text" id="client-company" placeholder="Напр. Coffeex" value="${escapeHtml(state.clientCompany||'')}">
+      </div>
+    </div>
+    <div style="max-width:340px;margin-bottom:18px;">
+      <label class="field-label">Телефон для связи <span style="color:var(--red);">*</span></label>
+      <input type="text" id="client-phone" placeholder="Напр. 995xxxxxxxxx" value="${escapeHtml(state.clientPhone||'')}">
+    </div>
+
     <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Отправить данные на обработку</h3>
     <p class="sub" style="margin-bottom:14px;">Мы получим ваши данные и пришлём готовый расчёт себестоимости и точки безубыточности в переписке.</p>
     ${state.shortenWarning ? `<div class="warn-box">Не удалось сократить ссылку (сервис сокращения недоступен). Отправлена полная ссылка — если в чате она не будет открываться по нажатию, скопируйте её вручную из сообщения и вставьте в адресную строку браузера.</div>` : ''}
     <div class="send-box">
-      <a class="btn btn-gold ${state.sending?'':''}" data-act="send" data-channel="whatsapp" href="#">${state.sending ? 'Готовим ссылку…' : 'Расчёт себестоимости и точки безубыточности'}</a>
+      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">${state.sending ? 'Готовим ссылку…' : 'Расчёт себестоимости и точки безубыточности'}</a>
       ${state.settings.telegram ? `<a class="btn btn-gold" data-act="send" data-channel="telegram" href="#">Отправить в Telegram</a>` : ''}
-    </div>
-    <div style="max-width:340px;margin:14px auto 0;">
-      <label class="field-label">Ваш номер для ответа (необязательно)</label>
-      <input type="text" id="client-contact" placeholder="Напр. 995xxxxxxxxx" value="${state.clientContact||''}">
     </div>
     ${state.lastSubmitId ? `<div style="text-align:center;"><span class="badge-id">ID расчёта: ${state.lastSubmitId}</span></div>` : ''}
     ${state.manualSendUrl ? `<div style="text-align:center;margin-top:10px;"><a href="${state.manualSendUrl}" target="_blank" class="btn btn-primary btn-sm">Нажмите здесь, чтобы открыть WhatsApp вручную</a></div>` : ''}
@@ -524,6 +548,7 @@ function renderAdminSettingsTab(){
     </div>
     <div class="row r2">
       <div><label class="field-label">PIN админ-режима</label><input type="text" id="set-pin" value="${state.settings.pin}"></div>
+      <div><label class="field-label">Название вашей компании (в шапке PDF-отчёта)</label><input type="text" id="set-provider" value="${escapeHtml(state.settings.providerName||'')}"></div>
     </div>
     <button class="btn btn-primary" data-act="save-settings">Сохранить настройки</button>
     <p class="tiny" style="margin-top:10px;">PIN — защита от случайного захода клиента в админ-режим, а не от целенаправленного взлома. Ссылку с этим инструментом отправляйте клиентам как есть — они попадут сразу в режим клиента.</p>
@@ -595,15 +620,26 @@ function renderReceipt(bk){
 
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-/* ================= EVENTS ================= */
-function attachHandlers(){
-  app.querySelectorAll('[data-act]').forEach(el=>{
-    const act = el.dataset.act;
-    const evt = (el.tagName==='INPUT'||el.tagName==='SELECT') ? 'input' : 'click';
-    el.addEventListener(evt, (e)=>{
-      if(el.tagName==='A' && el.getAttribute('href')==='#') e.preventDefault();
-      handleAction(act, el, e);
-    });
+/* ================= EVENTS =================
+   ВАЖНО: используем делегирование на уровне #app, а не навешивание обработчиков
+   на каждый элемент при каждом render(). Раньше кнопки внутри renderReportInto()
+   (Копировать отчёт, Скачать в PDF) вставлялись через innerHTML отдельно от
+   основного render() и НИКОГДА не получали обработчик клика — отсюда "PDF не
+   работает" (и "копировать" на самом деле тоже не работал, просто без видимой
+   ошибки). Делегирование на #app решает это разом и для будущих вставок HTML. */
+function bindGlobalEvents(){
+  app.addEventListener('click', (e)=>{
+    const el = e.target.closest('[data-act]');
+    if(!el || !app.contains(el)) return;
+    if(el.tagName==='INPUT' || el.tagName==='SELECT') return; // эти реагируют на 'input', не на 'click'
+    if(el.tagName==='A' && el.getAttribute('href')==='#') e.preventDefault();
+    handleAction(el.dataset.act, el, e);
+  });
+  app.addEventListener('input', (e)=>{
+    const el = e.target.closest('[data-act]');
+    if(!el || !app.contains(el)) return;
+    if(el.tagName!=='INPUT' && el.tagName!=='SELECT') return;
+    handleAction(el.dataset.act, el, e);
   });
 }
 
@@ -683,7 +719,7 @@ function handleAction(act, el, e){
     case 'admin-send-report': adminSendReport(); break;
 
     case 'do-lookup': doLookup(); break;
-    case 'print-report': window.print(); break;
+    case 'print-report': downloadReportPdf(el); break;
     case 'copy-report': {
       const ta = document.getElementById('report-text');
       if(!ta) break;
@@ -709,6 +745,7 @@ function handleAction(act, el, e){
       state.settings.telegram = document.getElementById('set-tg').value.trim();
       state.currency = document.getElementById('set-cur').value.trim() || '₾';
       state.settings.pin = document.getElementById('set-pin').value.trim() || '1234';
+      state.settings.providerName = document.getElementById('set-provider').value.trim() || 'Order Profit';
       storeSet('settings', JSON.stringify(state.settings), false);
       alert('Настройки сохранены на этом устройстве.');
       render(); break;
@@ -799,16 +836,27 @@ async function sendResult(channel){
   const bk = computeBreakeven();
   if(bk.revenue===null){ alert('Сначала заполните хотя бы блюда с ценами и постоянные расходы.'); return; }
 
+  // Валидация ОБЯЗАТЕЛЬНЫХ полей клиента — делаем это до открытия окна, чтобы при ошибке
+  // не оставалась висеть пустая вкладка about:blank.
+  const nameEl = document.getElementById('client-name');
+  const companyEl = document.getElementById('client-company');
+  const phoneEl = document.getElementById('client-phone');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const company = companyEl ? companyEl.value.trim() : '';
+  const phone = phoneEl ? phoneEl.value.trim() : '';
+  if(!name){ alert('Впишите ваше имя — это обязательное поле.'); if(nameEl) nameEl.focus(); return; }
+  if(!company){ alert('Впишите название компании / точки — это обязательное поле.'); if(companyEl) companyEl.focus(); return; }
+  if(!phone){ alert('Впишите телефон для связи — это обязательное поле.'); if(phoneEl) phoneEl.focus(); return; }
+  state.clientName = name; state.clientCompany = company; state.clientPhone = phone;
+
   // Открываем окно СРАЗУ, синхронно, пока браузер ещё считает это прямым результатом клика.
   const win = window.open('about:blank', '_blank');
 
   state.sending = true;
   render();
 
-  const contactEl = document.getElementById('client-contact');
-  state.clientContact = contactEl ? contactEl.value.trim() : '';
   const id = crypto.randomUUID().slice(0,6);
-  const payload = { id, date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk, clientContact: state.clientContact };
+  const payload = { id, date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk, clientName: state.clientName, clientCompany: state.clientCompany, clientPhone: state.clientPhone };
   state.lastSubmitId = id;
 
   const longUrl = buildReportUrl(payload);
@@ -820,6 +868,8 @@ async function sendResult(channel){
   state.shortenWarning = !shortUrl;
 
   const text = `Расчёт себестоимости и точки безубыточности\n`+
+    `Компания: ${company}\n`+
+    `Клиент: ${name}, тел. ${phone}\n`+
     `ID: ${id}\n`+
     `Мои данные для расчёта готовы, ссылка на отчёт: ${reportUrl}`;
 
@@ -842,6 +892,8 @@ function buildReportText(data){
   const bk = data.breakeven;
   let lines = [];
   lines.push('ОТЧЁТ: СЕБЕСТОИМОСТЬ И ТОЧКА БЕЗУБЫТОЧНОСТИ');
+  lines.push('Компания: ' + (data.clientCompany || '—'));
+  lines.push('Клиент: ' + (data.clientName || '—') + (data.clientPhone ? ', тел. ' + data.clientPhone : ''));
   lines.push('ID расчёта: ' + data.id);
   lines.push('');
   lines.push('— ТОЧКА БЕЗУБЫТОЧНОСТИ —');
@@ -888,6 +940,7 @@ function extractReportFromInput(raw){
 }
 function buildPrintableReportHtml(data){
   const bk = data.breakeven;
+  const providerName = (state.settings.providerName || 'Order Profit').trim() || 'Order Profit';
   const dishRows = data.dishes.map(d=>{
     const base = d.ingredients.filter(i=>!i.modifier).reduce((s,i)=>s+dishIngCost(i),0)+toNum(d.packaging);
     const fc = toNum(d.sellPrice)>0 ? (base/toNum(d.sellPrice)*100) : 0;
@@ -896,8 +949,10 @@ function buildPrintableReportHtml(data){
   }).join('');
   const fixedRows = data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<tr><td>${escapeHtml(f[0])}</td><td>${fmt(f[1],0)} ${data.currency}</td></tr>`).join('');
   return `
+    <div class="pr-brand">${escapeHtml(providerName)} · Финансовый расчёт для общепита</div>
     <div class="pr-header">
       <h1>Отчёт: себестоимость и точка безубыточности</h1>
+      ${data.clientCompany ? `<p class="pr-client">Для: ${escapeHtml(data.clientCompany)}${data.clientName ? ' · '+escapeHtml(data.clientName) : ''}</p>` : ''}
       <p>ID расчёта: ${escapeHtml(data.id)} · ${new Date(data.date).toLocaleDateString('ru-RU')}</p>
     </div>
     <div class="pr-big">
@@ -918,15 +973,43 @@ function buildPrintableReportHtml(data){
         ${fixedRows || '<tr><td colspan="2">Не заполнены</td></tr>'}
       </table>
     </div>
-    <div class="pr-footer">Расчёт подготовлен персонально для вашего бизнеса.</div>
+    <div class="pr-footer">Отчёт подготовлен <b>${escapeHtml(providerName)}</b>${data.clientCompany ? ' персонально для '+escapeHtml(data.clientCompany) : ' персонально для вашего бизнеса'}.</div>
   `;
 }
 
+/* Скачивание настоящего PDF-файла (без системного диалога печати) через html2pdf.js.
+   Если библиотека не загрузилась (например, CDN недоступен) — откатываемся на
+   window.print(), как было раньше, а не оставляем кнопку нерабочей молча. */
+async function downloadReportPdf(triggerEl){
+  const el = document.getElementById('printable-report');
+  if(!el){ window.print(); return; }
+  const originalLabel = triggerEl ? triggerEl.textContent : '';
+  if(triggerEl){ triggerEl.textContent = 'Готовим PDF…'; triggerEl.disabled = true; }
+  try{
+    if(typeof html2pdf === 'undefined') throw new Error('html2pdf.js не загрузился (проверьте сеть/CDN)');
+    const idPart = (lastReportData && lastReportData.id) ? lastReportData.id : 'raschet';
+    await html2pdf().from(el).set({
+      margin: 8,
+      filename: 'otchet-' + idPart + '.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).save();
+  }catch(e){
+    console.warn('html2pdf.js не сработал, откатываемся на системную печать:', e);
+    alert('Не удалось сформировать PDF-файл напрямую — открываю системный диалог печати. В нём выберите «Сохранить как PDF».');
+    window.print();
+  }finally{
+    if(triggerEl){ triggerEl.textContent = originalLabel; triggerEl.disabled = false; }
+  }
+}
+
 function renderReportInto(out, data){
+  lastReportData = data;
   const report = buildReportText(data);
   out.innerHTML = `
     <div class="lookup-result">
-      <p class="tiny">Получено: ${new Date(data.date).toLocaleString('ru-RU')}${data.clientContact ? ' · контакт клиента: '+escapeHtml(data.clientContact) : ' · контакт клиента не указан'}</p>
+      <p class="tiny">Получено: ${new Date(data.date).toLocaleString('ru-RU')}${data.clientCompany ? ' · компания: '+escapeHtml(data.clientCompany) : ''}${data.clientName ? ' · клиент: '+escapeHtml(data.clientName) : ''}${data.clientPhone ? ' · тел. '+escapeHtml(data.clientPhone) : ''}</p>
       <div class="row r2">
         <div><span class="tiny">Точка безубыточности</span><br><b>${fmt(data.breakeven.revenue,0)} ${data.currency}</b></div>
         <div><span class="tiny">Чеков/день</span><br><b>${fmt(data.breakeven.checksDay,1)}</b></div>
@@ -1000,6 +1083,7 @@ async function init(){
   }
   render();
 }
+bindGlobalEvents();
 init();
 </script>
 </body>
