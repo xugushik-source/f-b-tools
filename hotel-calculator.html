@@ -125,7 +125,11 @@
      Блок скрыт через display:none и временно показывается на весь экран только на момент
      самого снимка (см. downloadReportPdf). Высота — естественная (auto), НЕ height:100%/overflow:auto
      (иначе html2canvas обрежет захват до размера окна вместо реальной высоты содержимого). */
-  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; color:#1D2624; z-index:9999; padding:24px; box-sizing:border-box; }
+  /* ИСПРАВЛЕНО: width:100% на телефоне = ширина ЭКРАНА (~380px), а не ширина печатного
+     документа — таблица с 5 колонками не влезает, цифры переносятся на вторую строку внутри
+     ячейки и визуально наезжают друг на друга. Фиксированная ширина 760px не зависит от
+     экрана устройства, как и положено печатному документу. */
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:760px; background:#fff; color:#1D2624; z-index:9999; padding:24px; box-sizing:border-box; }
   .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#B08D57;text-align:center;margin-bottom:10px;}
   .pr-header{text-align:center;border-bottom:3px solid #1A2B2E;padding-bottom:14px;margin-bottom:20px;}
   .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#1A2B2E;}
