@@ -1089,6 +1089,7 @@ function buildPrintableReportHtml(data){
   }).join('');
   const fixedRows = data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<tr><td>${escapeHtml(f[0])}</td><td>${fmt(f[1],0)} ${data.currency}</td></tr>`).join('');
   return `
+    <div style="background:#ff3b30;color:#fff;text-align:center;padding:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.05em;">СБОРКА ОТЧЁТА: v3-fix-colors (если этой красной строки нет — открыт старый файл, залейте новый на GitHub)</div>
     <div class="pr-brand">${escapeHtml(providerName)} · Финансовый расчёт для общепита</div>
     <div class="pr-header">
       <h1>Отчёт: себестоимость и точка безубыточности</h1>
@@ -1134,7 +1135,18 @@ async function downloadReportPdf(triggerEl){
     // баг библиотеки, не только наше предположение) — поэтому блок должен реально быть в
     // отрисованной области экрана в момент снимка, а не спрятан координатами за пределы экрана.
     el.style.display = 'block';
+    el.style.color = '#2B1B12';
     window.scrollTo(0, 0);
+
+    // ПРИНУДИТЕЛЬНО проставляем цвет напрямую в inline-стиль каждого элемента, а не надеемся
+    // на CSS-каскад/наследование. html2canvas при клонировании DOM для снимка может некорректно
+    // пересчитывать наследуемые/каскадные значения (задокументированные проблемы библиотеки
+    // с "missing styles" именно при рендере клона) — inline-стиль на самом элементе не требует
+    // от html2canvas вычислять наследование вообще, это самый грубый, но самый надёжный способ.
+    el.querySelectorAll('th').forEach(node => { node.style.color = '#241609'; });
+    el.querySelectorAll('td, .pr-client, .pr-header p, .pr-big .lbl, .pr-footer').forEach(node => { node.style.color = '#2B1B12'; });
+    el.querySelectorAll('h1, h2, .pr-big .val').forEach(node => { node.style.color = '#241609'; });
+
     // Даём браузеру один кадр на реальную отрисовку перед тем, как html2canvas начнёт снимать —
     // без этой паузы есть риск поймать ещё не отрисованный кадр.
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
