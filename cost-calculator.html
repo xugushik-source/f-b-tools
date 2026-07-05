@@ -78,6 +78,7 @@
   .btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);}
   .btn-gold{background:var(--gold);color:var(--espresso);}
   .btn-sm{padding:7px 10px;font-size:11px;}
+  .btn:disabled{opacity:.55;cursor:default;}
 
   .dish-card{border:1px solid var(--line);border-radius:2px;padding:16px 16px 12px;margin-bottom:14px;background:#fff;}
   .dish-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
@@ -173,6 +174,13 @@ async function storeGet(key, shared){
   if(shared) return null;
   try{ const v = localStorage.getItem('calc-app:'+key); return v!==null ? {key,value:v,shared:false} : null; }catch(e){ return null; }
 }
+async function storeDelete(key, shared){
+  if(hasClaudeStorage()){
+    try{ await window.storage.delete(key, !!shared); return true; }catch(e){ console.warn('Хранилище Claude недоступно при удалении, пробую localStorage'); }
+  }
+  if(shared) return false;
+  try{ localStorage.removeItem('calc-app:'+key); return true; }catch(e){ console.warn(e); return false; }
+}
 
 /* ================= URL DATA ENCODING (сжатие + без хранилища — работает на любом хостинге) ================= */
 function buildReportUrl(payload){
@@ -185,6 +193,25 @@ function readReportFromUrl(){
   const raw = params.get('report');
   if(!raw) return null;
   try{ return JSON.parse(LZString.decompressFromEncodedURIComponent(raw)); }catch(e){ console.error('Не удалось прочитать отчёт из ссылки:', e); return null; }
+}
+
+/* ================= LINK SHORTENING (чтобы длинная ссылка не обрывалась и не "слеплялась" в мессенджерах) =================
+   Пробуем сократить через is.gd. Если сервис недоступен/не ответил за 5 секунд — молча
+   откатываемся на длинную ссылку и сообщаем об этом в интерфейсе, а не ломаем отправку. */
+async function shortenUrl(longUrl){
+  try{
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(), 5000);
+    const resp = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl), { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if(!resp.ok) throw new Error('is.gd ответил с ошибкой: ' + resp.status);
+    const text = (await resp.text()).trim();
+    if(text.indexOf('http') === 0) return text;
+    throw new Error('is.gd вернул неожиданный ответ: ' + text);
+  }catch(e){
+    console.warn('Сокращение ссылки не удалось, используем длинную ссылку как есть:', e);
+    return null;
+  }
 }
 
 /* ================= NUMBER HELPERS ================= */
@@ -215,6 +242,8 @@ let state = {
   lastSubmitId: null,
   clientContact: "",
   manualSendUrl: null,
+  shortenWarning: false,   // true, если сократить ссылку не удалось и отправлена длинная
+  sending: false,          // true во время формирования ссылки/сокращения — блокируем повторные клики
   savedList: [],           // [{id, name, updatedAt}]
   currentSavedId: null,
   currentSavedName: null
@@ -455,8 +484,9 @@ function renderResultTab(bk){
     <hr style="margin:24px 0;border:none;border-top:1px solid var(--line);">
     <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Отправить данные на обработку</h3>
     <p class="sub" style="margin-bottom:14px;">Мы получим ваши данные и пришлём готовый расчёт себестоимости и точки безубыточности в переписке.</p>
+    ${state.shortenWarning ? `<div class="warn-box">Не удалось сократить ссылку (сервис сокращения недоступен). Отправлена полная ссылка — если в чате она не будет открываться по нажатию, скопируйте её вручную из сообщения и вставьте в адресную строку браузера.</div>` : ''}
     <div class="send-box">
-      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">Расчёт себестоимости и точки безубыточности</a>
+      <a class="btn btn-gold ${state.sending?'':''}" data-act="send" data-channel="whatsapp" href="#">${state.sending ? 'Готовим ссылку…' : 'Расчёт себестоимости и точки безубыточности'}</a>
       ${state.settings.telegram ? `<a class="btn btn-gold" data-act="send" data-channel="telegram" href="#">Отправить в Telegram</a>` : ''}
     </div>
     <div style="max-width:340px;margin:14px auto 0;">
@@ -737,7 +767,10 @@ async function duplicateSaved(id){
 }
 async function deleteSaved(id){
   if(!confirm('Удалить этот сохранённый расчёт без возможности восстановить?')) return;
-  await window.storage.delete('saved-item:'+id, false).catch(()=>{});
+  // ИСПРАВЛЕНО: раньше здесь был прямой вызов window.storage.delete(...) без проверки на
+  // существование этого API. На GitHub Pages (и любом обычном хостинге) window.storage
+  // не существует — вызов падал с TypeError, и кнопка "Удалить" не работала на проде.
+  await storeDelete('saved-item:'+id, false);
   state.savedList = state.savedList.filter(s=>s.id!==id);
   if(state.currentSavedId===id){ state.currentSavedId=null; state.currentSavedName=null; }
   await persistSavedList();
@@ -762,11 +795,15 @@ async function adminSendReport(){
 
 /* ================= SUBMIT TO ADMIN ================= */
 async function sendResult(channel){
+  if(state.sending) return; // защита от повторного клика, пока идёт сокращение ссылки
   const bk = computeBreakeven();
   if(bk.revenue===null){ alert('Сначала заполните хотя бы блюда с ценами и постоянные расходы.'); return; }
 
   // Открываем окно СРАЗУ, синхронно, пока браузер ещё считает это прямым результатом клика.
   const win = window.open('about:blank', '_blank');
+
+  state.sending = true;
+  render();
 
   const contactEl = document.getElementById('client-contact');
   state.clientContact = contactEl ? contactEl.value.trim() : '';
@@ -774,7 +811,13 @@ async function sendResult(channel){
   const payload = { id, date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk, clientContact: state.clientContact };
   state.lastSubmitId = id;
 
-  const reportUrl = buildReportUrl(payload);
+  const longUrl = buildReportUrl(payload);
+  // Пробуем сократить ссылку, чтобы мессенджер не "проглатывал" длинный URL и не обрывал его
+  // визуально как кликабельный (реальный случай, воспроизведённый в этом чате). Если сервис
+  // сокращения недоступен — используем длинную ссылку как есть и предупреждаем в интерфейсе.
+  const shortUrl = await shortenUrl(longUrl);
+  const reportUrl = shortUrl || longUrl;
+  state.shortenWarning = !shortUrl;
 
   const text = `Расчёт себестоимости и точки безубыточности\n`+
     `ID: ${id}\n`+
@@ -783,6 +826,8 @@ async function sendResult(channel){
   const url = channel==='whatsapp'
     ? `https://wa.me/${state.settings.whatsapp}?text=${encodeURIComponent(text)}`
     : `https://t.me/${state.settings.telegram}?text=${encodeURIComponent(text)}`;
+
+  state.sending = false;
 
   if(win && !win.closed){
     win.location.href = url;
