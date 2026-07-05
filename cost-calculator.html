@@ -197,11 +197,29 @@ function buildReportUrl(payload){
   const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
   return base + '?report=' + encodeURIComponent(compressed);
 }
+let lastReportParseError = null; // видимая причина сбоя разбора ?report=, вместо тихого console.error
 function readReportFromUrl(){
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('report');
   if(!raw) return null;
-  try{ return JSON.parse(LZString.decompressFromEncodedURIComponent(raw)); }catch(e){ console.error('Не удалось прочитать отчёт из ссылки:', e); return null; }
+  lastReportParseError = null;
+  let decompressed;
+  try{
+    decompressed = LZString.decompressFromEncodedURIComponent(raw);
+  }catch(e){
+    lastReportParseError = 'LZString.decompressFromEncodedURIComponent выбросил исключение: ' + (e && e.message ? e.message : String(e));
+    return null;
+  }
+  if(decompressed === null || decompressed === undefined || decompressed === ''){
+    lastReportParseError = 'Декомпрессия вернула пустой результат — сжатая строка повреждена или обрезана при копировании/передаче.';
+    return null;
+  }
+  try{
+    return JSON.parse(decompressed);
+  }catch(e){
+    lastReportParseError = 'JSON.parse не смог разобрать результат декомпрессии: ' + (e && e.message ? e.message : String(e)) + '. Первые 80 символов результата: ' + decompressed.slice(0,80);
+    return null;
+  }
 }
 
 /* ================= LINK SHORTENING (чтобы длинная ссылка не обрывалась и не "слеплялась" в мессенджерах) =================
@@ -1044,6 +1062,7 @@ async function init(){
   }catch(e){}
 
   // Если открыли по ссылке с отчётом — сразу показываем его (после PIN), минуя обычную форму
+  const hasReportParam = new URLSearchParams(window.location.search).has('report');
   const reportData = readReportFromUrl();
   if(reportData){
     const pin = prompt('Эта ссылка открывает детальный отчёт. Введите PIN администратора:');
@@ -1057,6 +1076,18 @@ async function init(){
       app.innerHTML = `<div class="panel" style="margin-top:40px;"><h2>Неверный PIN</h2><p class="sub">Обновите страницу и попробуйте снова, либо откройте инструмент по обычной ссылке без ?report=...</p></div>`;
     }
     return; // не запускаем обычную форму поверх отчёта
+  } else if(hasReportParam){
+    // ВАЖНО: параметр report в ссылке ЕСТЬ, но разобрать его не удалось — раньше это тихо
+    // проваливалось в обычную стартовую форму, и понять причину можно было только гаданием
+    // по скриншотам. Теперь показываем точную причину сбоя прямо на экране.
+    app.innerHTML = `
+      <div class="panel" style="margin-top:40px;max-width:640px;margin-left:auto;margin-right:auto;">
+        <h2>Не удалось прочитать отчёт по ссылке</h2>
+        <p class="sub">В ссылке есть параметр отчёта, но расшифровать его не получилось. Это не тот же экран, что при отсутствии ссылки вообще — ниже точная техническая причина.</p>
+        <div class="warn-box">${escapeHtml(lastReportParseError || 'Причина не определена.')}</div>
+        <p class="tiny">Вероятные причины: ссылка была обрезана при копировании из мессенджера, повреждена при передаче, либо была создана другой версией инструмента. Скопируйте ссылку заново целиком (от https до самого конца строки) и откройте в новой вкладке.</p>
+      </div>`;
+    return;
   }
 
   await refreshSavedList();
