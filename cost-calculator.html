@@ -129,11 +129,33 @@
   .lookup-result{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
   .warn-box{background:#FCF1E9;border:1px solid #E8B84B;color:#6B4A17;padding:12px 14px;border-radius:2px;font-size:12.5px;margin-bottom:16px;}
   .empty-note{font-size:13px;color:var(--ink-soft);font-style:italic;padding:10px 0;}
+
+  /* ===== ПЕЧАТНАЯ ВЕРСИЯ ОТЧЁТА (для PDF) ===== */
+  .printable-report{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printable-report, #printable-report *{visibility:visible;}
+    #printable-report{display:block !important;position:absolute;left:0;top:0;width:100%;padding:20px;}
+    .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
+    .pr-header h1{font-family:'Oswald',sans-serif;font-size:24px;text-transform:uppercase;margin:0 0 4px;color:#241609;}
+    .pr-header p{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;margin:0;}
+    .pr-block{margin-bottom:22px;}
+    .pr-block h2{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;border-bottom:1px solid #DCCFAE;padding-bottom:6px;margin-bottom:10px;color:#241609;}
+    .pr-big{text-align:center;background:#FBF6EC;border:2px solid #C99A3D;border-radius:6px;padding:16px;margin-bottom:20px;}
+    .pr-big .val{font-family:'Oswald',sans-serif;font-size:30px;color:#241609;font-weight:700;}
+    .pr-big .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B5A48;text-transform:uppercase;}
+    table.pr-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace;}
+    table.pr-table th{text-align:left;border-bottom:2px solid #241609;padding:6px 8px;font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:11px;}
+    table.pr-table td{padding:6px 8px;border-bottom:1px solid #DCCFAE;}
+    table.pr-table tr:nth-child(even){background:#FBF6EC;}
+    .pr-footer{margin-top:30px;font-size:10px;color:#6B5A48;text-align:center;font-family:'JetBrains Mono',monospace;}
+  }
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <script>
 /* ================= STORAGE HELPERS (с откатом на localStorage) ================= */
 function hasClaudeStorage(){ return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.set === 'function'; }
@@ -152,18 +174,17 @@ async function storeGet(key, shared){
   try{ const v = localStorage.getItem('calc-app:'+key); return v!==null ? {key,value:v,shared:false} : null; }catch(e){ return null; }
 }
 
-/* ================= URL DATA ENCODING (без хранилища — работает на любом хостинге) ================= */
-function b64Encode(str){ return btoa(unescape(encodeURIComponent(str))); }
-function b64Decode(str){ return decodeURIComponent(escape(atob(str))); }
+/* ================= URL DATA ENCODING (сжатие + без хранилища — работает на любом хостинге) ================= */
 function buildReportUrl(payload){
   const base = window.location.origin + window.location.pathname;
-  return base + '?report=' + encodeURIComponent(b64Encode(JSON.stringify(payload)));
+  const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+  return base + '?report=' + compressed;
 }
 function readReportFromUrl(){
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('report');
   if(!raw) return null;
-  try{ return JSON.parse(b64Decode(raw)); }catch(e){ console.error('Не удалось прочитать отчёт из ссылки:', e); return null; }
+  try{ return JSON.parse(LZString.decompressFromEncodedURIComponent(raw)); }catch(e){ console.error('Не удалось прочитать отчёт из ссылки:', e); return null; }
 }
 
 /* ================= NUMBER HELPERS ================= */
@@ -632,6 +653,7 @@ function handleAction(act, el, e){
     case 'admin-send-report': adminSendReport(); break;
 
     case 'do-lookup': doLookup(); break;
+    case 'print-report': window.print(); break;
     case 'copy-report': {
       const ta = document.getElementById('report-text');
       if(!ta) break;
@@ -809,17 +831,52 @@ async function doLookup(){
 }
 function extractReportFromInput(raw){
   try{
-    // если вставили целую ссылку — вытаскиваем параметр report
     if(raw.includes('report=')){
       const qIndex = raw.indexOf('?');
       const params = new URLSearchParams(qIndex>=0 ? raw.slice(qIndex) : raw);
       const p = params.get('report');
-      if(p) return JSON.parse(b64Decode(p));
+      if(p) return JSON.parse(LZString.decompressFromEncodedURIComponent(p));
     }
-    // иначе пробуем как голый base64-код
-    return JSON.parse(b64Decode(raw));
+    // иначе пробуем как голый сжатый код
+    return JSON.parse(LZString.decompressFromEncodedURIComponent(raw));
   }catch(e){ console.error(e); return null; }
 }
+function buildPrintableReportHtml(data){
+  const bk = data.breakeven;
+  const dishRows = data.dishes.map(d=>{
+    const base = d.ingredients.filter(i=>!i.modifier).reduce((s,i)=>s+dishIngCost(i),0)+toNum(d.packaging);
+    const fc = toNum(d.sellPrice)>0 ? (base/toNum(d.sellPrice)*100) : 0;
+    const margin = toNum(d.sellPrice) - base;
+    return `<tr><td>${escapeHtml(d.name)}</td><td>${fmt(base)} ${data.currency}</td><td>${fmt(d.sellPrice)} ${data.currency}</td><td>${fc?fmt(fc,1)+'%':'—'}</td><td>${fmt(margin)} ${data.currency}</td></tr>`;
+  }).join('');
+  const fixedRows = data.fixed.filter(f=>toNum(f[1])>0).map(f=>`<tr><td>${escapeHtml(f[0])}</td><td>${fmt(f[1],0)} ${data.currency}</td></tr>`).join('');
+  return `
+    <div class="pr-header">
+      <h1>Отчёт: себестоимость и точка безубыточности</h1>
+      <p>ID расчёта: ${escapeHtml(data.id)} · ${new Date(data.date).toLocaleDateString('ru-RU')}</p>
+    </div>
+    <div class="pr-big">
+      <div class="val">${fmt(bk.revenue,0)} ${data.currency}</div>
+      <div class="lbl">Выручка безубыточности / месяц · ${fmt(bk.checksDay,1)} чеков/день</div>
+    </div>
+    <div class="pr-block">
+      <h2>Себестоимость по меню</h2>
+      <table class="pr-table">
+        <tr><th>Блюдо</th><th>Себестоимость</th><th>Цена</th><th>Food cost</th><th>Маржа</th></tr>
+        ${dishRows}
+      </table>
+    </div>
+    <div class="pr-block">
+      <h2>Постоянные расходы</h2>
+      <table class="pr-table">
+        <tr><th>Статья</th><th>Сумма/мес</th></tr>
+        ${fixedRows || '<tr><td colspan="2">Не заполнены</td></tr>'}
+      </table>
+    </div>
+    <div class="pr-footer">Расчёт подготовлен персонально для вашего бизнеса.</div>
+  `;
+}
+
 function renderReportInto(out, data){
   const report = buildReportText(data);
   out.innerHTML = `
@@ -843,9 +900,11 @@ function renderReportInto(out, data){
       <div class="send-box" style="justify-content:flex-start;margin-top:10px;">
         <button class="btn btn-primary btn-sm" data-act="copy-report">Копировать отчёт</button>
         <a class="btn btn-gold btn-sm" href="https://wa.me/${state.settings.reviewWhatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(report)}" target="_blank">Отправить на внутренний WhatsApp</a>
+        <button class="btn btn-gold btn-sm" data-act="print-report">Скачать в PDF</button>
       </div>
       <p class="tiny" style="margin-top:10px;">Клиенту отправляйте вручную — скопируйте отчёт и вставьте в чат, откуда пришли его данные, только после оплаты.</p>
     </div>
+    <div class="printable-report" id="printable-report">${buildPrintableReportHtml(data)}</div>
   `;
 }
 
