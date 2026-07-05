@@ -143,7 +143,13 @@
      за пределами видимой страницы захватывается пустым. Теперь блок просто скрыт через
      display:none и временно показывается на весь экран ТОЛЬКО на момент самого снимка
      (см. downloadReportPdf), после чего сразу скрывается обратно. */
-  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; overflow:auto; background:#fff; z-index:9999; padding:24px; box-sizing:border-box; }
+  /* ИСПРАВЛЕНО ЕЩЁ РАЗ: height:100%+overflow:auto заставляли html2canvas мерить высоту
+     захвата по высоте ЭКРАНА, а не по реальной высоте отчёта (задокументировано в issues
+     html2canvas #200 и отдельно про overflow:auto/hidden) — отчёт обрезался до одного экрана,
+     и если верхняя часть viewport'а после window.scrollTo(0,0) оказывалась почти пустой,
+     получался пустой/почти пустой PDF. Теперь высота блока естественная (auto), растёт под
+     содержимое целиком, а не зажата рамками экрана. */
+  .printable-report{ display:none; position:fixed; top:0; left:0; width:100%; background:#fff; z-index:9999; padding:24px; box-sizing:border-box; }
   .pr-brand{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C99A3D;text-align:center;margin-bottom:10px;}
   .pr-header{text-align:center;border-bottom:3px solid #241609;padding-bottom:14px;margin-bottom:20px;}
   .pr-header h1{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;margin:0 0 8px;color:#241609;}
@@ -1133,11 +1139,17 @@ async function downloadReportPdf(triggerEl){
     // без этой паузы есть риск поймать ещё не отрисованный кадр.
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+    // Явно передаём реальную высоту и ширину блока — не полагаемся на автоопределение
+    // html2canvas, которое (см. issue #200 в трекере библиотеки) может мерить высоту по
+    // окну вместо содержимого при определённом позиционировании.
+    const fullWidth = Math.max(el.scrollWidth, el.offsetWidth);
+    const fullHeight = Math.max(el.scrollHeight, el.offsetHeight);
+
     await html2pdf().from(el).set({
       margin: 8,
       filename: 'otchet-' + idPart + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, width: fullWidth, height: fullHeight, windowWidth: fullWidth, windowHeight: fullHeight },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).save();
   }catch(e){
