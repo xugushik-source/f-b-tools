@@ -272,8 +272,8 @@ let state = {
   clientCompany: "",
   clientPhone: "",
   manualSendUrl: null,
-  shortenWarning: false,   // true, если сократить ссылку не удалось и отправлена длинная
-  sending: false,          // true во время формирования ссылки/сокращения — блокируем повторные клики
+  lastReportLink: null,        // ссылка на отчёт, показанная как страховка на случай сбоя буфера обмена
+  lastReportLinkCopied: false, // удалось ли реально скопировать в буфер (а не просто "должно было")
   savedList: [],           // [{id, name, updatedAt}]
   currentSavedId: null,
   currentSavedName: null
@@ -530,12 +530,16 @@ function renderResultTab(bk){
 
     <h3 style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;">Отправить данные на обработку</h3>
     <p class="sub" style="margin-bottom:14px;">Мы получим ваши данные и пришлём готовый расчёт себестоимости и точки безубыточности в переписке.</p>
-    ${state.shortenWarning ? `<div class="warn-box">Не удалось сократить ссылку (сервис сокращения недоступен). Отправлена полная ссылка — если в чате она не будет открываться по нажатию, скопируйте её вручную из сообщения и вставьте в адресную строку браузера.</div>` : ''}
     <div class="send-box">
-      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">${state.sending ? 'Готовим ссылку…' : 'Расчёт себестоимости и точки безубыточности'}</a>
+      <a class="btn btn-gold" data-act="send" data-channel="whatsapp" href="#">Расчёт себестоимости и точки безубыточности</a>
       ${state.settings.telegram ? `<a class="btn btn-gold" data-act="send" data-channel="telegram" href="#">Отправить в Telegram</a>` : ''}
     </div>
     ${state.lastSubmitId ? `<div style="text-align:center;"><span class="badge-id">ID расчёта: ${state.lastSubmitId}</span></div>` : ''}
+    ${state.lastReportLink ? `
+    <div style="max-width:480px;margin:14px auto 0;">
+      <p class="tiny" style="text-align:center;">${state.lastReportLinkCopied ? 'Ссылка скопирована в буфер обмена — вставьте её в открывшийся чат. Если вставка не сработала, вот она:' : 'Автокопирование не сработало — скопируйте ссылку вручную из поля ниже:'}</p>
+      <input type="text" readonly value="${state.lastReportLink}" onclick="this.select();" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+    </div>` : ''}
     ${state.manualSendUrl ? `<div style="text-align:center;margin-top:10px;"><a href="${state.manualSendUrl}" target="_blank" class="btn btn-primary btn-sm">Нажмите здесь, чтобы открыть WhatsApp вручную</a></div>` : ''}
     ` : ''}
   `;
@@ -850,7 +854,15 @@ async function adminSendReport(){
 
 /* ================= SUBMIT TO ADMIN ================= */
 async function sendResult(channel){
-  if(state.sending) return; // защита от повторного клика, пока идёт сокращение ссылки
+  if(sendResult._busy) return; // простая защита от дребезга повторного клика
+  sendResult._busy = true;
+  try{
+    await sendResultImpl(channel);
+  } finally {
+    sendResult._busy = false;
+  }
+}
+async function sendResultImpl(channel){
   const bk = computeBreakeven();
   if(bk.revenue===null){ alert('Сначала заполните хотя бы блюда с ценами и постоянные расходы.'); return; }
 
@@ -870,32 +882,59 @@ async function sendResult(channel){
   // Открываем окно СРАЗУ, синхронно, пока браузер ещё считает это прямым результатом клика.
   const win = window.open('about:blank', '_blank');
 
-  state.sending = true;
-  render();
-
   const id = crypto.randomUUID().slice(0,6);
   const payload = { id, date: new Date().toISOString(), currency: state.currency, dishes: state.dishes, fixed: state.fixed, variablePct: state.variablePct, avgCheck: state.avgCheck, breakeven: bk, clientName: state.clientName, clientCompany: state.clientCompany, clientPhone: state.clientPhone };
   state.lastSubmitId = id;
+  const reportUrl = buildReportUrl(payload);
 
-  const longUrl = buildReportUrl(payload);
-  // Пробуем сократить ссылку, чтобы мессенджер не "проглатывал" длинный URL и не обрывал его
-  // визуально как кликабельный (реальный случай, воспроизведённый в этом чате). Если сервис
-  // сокращения недоступен — используем длинную ссылку как есть и предупреждаем в интерфейсе.
-  const shortUrl = await shortenUrl(longUrl);
-  const reportUrl = shortUrl || longUrl;
-  state.shortenWarning = !shortUrl;
+  /* ВАЖНО: раньше длинная ссылка вставлялась прямо в текст WhatsApp-сообщения. Итоговая
+     ссылка wa.me получалась ~1900 символов (кириллица после encodeURIComponent разрастается
+     в 6 раз на символ) — это впритык к общепринятому пределу ~2000 символов, после которого
+     браузер/ОС может ОБРЕЗАТЬ ссылку молча, без единой ошибки. Именно это и произошло —
+     воспроизведено и посчитано в этом же чате. Теперь вместо вставки в текст — копируем
+     ссылку в буфер обмена, а в WhatsApp уходит короткое сообщение с просьбой её вставить.
+     Копирование делаем СРАЗУ, синхронно после клика, без await перед этим — на iOS Safari
+     доступ к буферу обмена может быть отклонён, если прошло слишком много времени с момента
+     прямого действия пользователя (тот же принцип, что и с window.open). */
+  let copied = false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(reportUrl);
+      copied = true;
+    }
+  }catch(e){ console.warn('Clipboard API отклонил запись:', e); }
+  if(!copied){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = reportUrl;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){ console.warn('Запасной способ копирования тоже не сработал:', e); }
+  }
 
-  const text = `Расчёт себестоимости и точки безубыточности\n`+
-    `Компания: ${company}\n`+
-    `Клиент: ${name}, тел. ${phone}\n`+
-    `ID: ${id}\n`+
-    `Мои данные для расчёта готовы, ссылка на отчёт: ${reportUrl}`;
+  // Страховка от невидимого сбоя: ссылку показываем на экране в любом случае, скопировалась
+  // она или нет — не верим молча, что буфер сработал, а даём проверить глазами.
+  state.lastReportLink = reportUrl;
+  state.lastReportLinkCopied = copied;
+
+  const text = copied
+    ? `Расчёт себестоимости и точки безубыточности\n`+
+      `Компания: ${company}\n`+
+      `Клиент: ${name}, тел. ${phone}\n`+
+      `ID: ${id}\n`+
+      `Ссылка на отчёт скопирована в буфер обмена — нажмите и удерживайте поле ввода в этом чате и выберите «Вставить» перед отправкой.`
+    : `Расчёт себестоимости и точки безубыточности\n`+
+      `Компания: ${company}\n`+
+      `Клиент: ${name}, тел. ${phone}\n`+
+      `ID: ${id}\n`+
+      `Не удалось скопировать ссылку автоматически — вернитесь в инструмент и скопируйте её вручную из поля на экране, затем вставьте сюда.`;
 
   const url = channel==='whatsapp'
     ? `https://wa.me/${state.settings.whatsapp}?text=${encodeURIComponent(text)}`
     : `https://t.me/${state.settings.telegram}?text=${encodeURIComponent(text)}`;
-
-  state.sending = false;
 
   if(win && !win.closed){
     win.location.href = url;
